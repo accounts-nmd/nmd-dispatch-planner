@@ -1,0 +1,52 @@
+rules_version = '2';
+// NMD Dispatch Planner – paste this in
+// Firebase console → Firestore Database → Rules → Publish.
+// No changes needed: who may do what comes from the app's own logins.
+//   Admin   : everything, including logins
+//   Planner : plans, qty, priorities, pending SO
+//   Viewer  : read only
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function pubPath() { return /databases/$(database)/documents/public/users; }
+    function signedIn() { return request.auth != null && request.auth.token.email != null; }
+    function key() { return request.auth.token.email.split('@')[0]; }
+    function isUser() { return signedIn() && exists(pubPath()) && key() in get(pubPath()).data.active; }
+    function hasRole(roles) { return isUser() && get(pubPath()).data.active[key()] in roles; }
+
+    // Login list shown on the login screen (names and roles only – no passwords)
+    match /public/users {
+      allow read: if true;
+      allow create: if signedIn() && !exists(pubPath());   // first-time setup only
+      allow update, delete: if hasRole(['admin']);
+    }
+
+    // Login details – Admin only
+    match /app/auth {
+      allow read: if isUser();
+      allow write: if hasRole(['admin']);
+    }
+
+    // Pending SO, priorities, settings, contacts …
+    match /app/{doc} {
+      allow read: if isUser();
+      allow write: if doc != 'auth' && hasRole(['admin', 'planner']);
+    }
+
+    match /qty/{date} {
+      allow read: if isUser();
+      allow write: if hasRole(['admin', 'planner']);
+    }
+
+    match /plans/{rest=**} {
+      allow read: if isUser();
+      allow write: if hasRole(['admin', 'planner']);
+    }
+
+    // Activity history: everyone signed in adds entries, only Admin deletes
+    match /log/{id} {
+      allow read, create: if isUser();
+      allow update, delete: if hasRole(['admin']);
+    }
+  }
+}

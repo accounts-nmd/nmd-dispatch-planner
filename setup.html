@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>NMD Dispatch Planner – Setup</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="firebase-bridge.js"></script>
+<style>
+  :root{--ink:#14202e;--mut:#5a6878;--line:#d8e0ea;--pri:#127a7a;--bg:#f2f5f8}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+  main{max-width:760px;margin:0 auto;padding:24px 16px 60px;display:flex;flex-direction:column;gap:16px}
+  h1{margin:0;font-size:24px}
+  section{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px}
+  h2{margin:0;font-size:17px}
+  p{margin:0;color:var(--mut)}
+  input,select{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:9px;color:var(--ink);width:100%}
+  button{font:inherit;font-weight:600;padding:10px 14px;border:0;border-radius:9px;background:var(--pri);color:#fff;cursor:pointer;align-self:flex-start}
+  button.sec{background:#e8eef4;color:var(--ink)}
+  button:disabled{opacity:.5;cursor:default}
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:6px 4px;border-bottom:1px solid var(--line);font-size:14px}
+  th{font-size:12px;color:var(--mut);text-transform:uppercase}
+  .tw{overflow-x:auto}
+  pre{margin:0;background:#0f1b29;color:#d7e3f0;border-radius:9px;padding:10px;font-size:12px;white-space:pre-wrap;max-height:260px;overflow:auto}
+</style>
+</head>
+<body>
+<main>
+  <h1>NMD Dispatch Planner – one-time setup</h1>
+  <p>Run this once after creating the Firebase project. It creates the logins and (optionally) brings over your data from the claude.ai version. Afterwards open <a href="./">the planner</a>.</p>
+
+  <section>
+    <h2>1. Data from the claude.ai version (optional)</h2>
+    <p>Choose <b>nmd-data-backup-….json</b> to bring over the pending SO, plans, quantities, priorities and the list of logins. Skip this to start fresh.</p>
+    <input type="file" id="bf" accept=".json">
+  </section>
+
+  <section>
+    <h2>2. Logins and passwords</h2>
+    <p>Same click-based logins as the app. Type a password for each one (you can keep the old passwords). The first Admin row is used to run this setup.</p>
+    <div class="tw"><table>
+      <thead><tr><th>Login ID</th><th>Name</th><th>Role</th><th>Password</th><th></th></tr></thead>
+      <tbody id="ul"></tbody>
+    </table></div>
+    <button class="sec" id="add" type="button">+ Add login</button>
+  </section>
+
+  <section>
+    <h2>3. Run setup</h2>
+    <button id="go" type="button">Create logins &amp; import</button>
+  </section>
+
+  <pre id="out">Ready.</pre>
+</main>
+<script>
+(function(){
+  const $=s=>document.querySelector(s),out=$("#out");
+  const log=t=>{out.textContent+="\n"+t;out.scrollTop=out.scrollHeight};
+  const cfg=window.NMD_FIREBASE_CONFIG||{};
+  if(!cfg.apiKey||/^PASTE/.test(cfg.apiKey)){out.textContent="firebase-config.js is not filled in yet. See README step 3.";$("#go").disabled=true}
+  let backup=null;
+  let users=[{u:"admin",name:"Admin",role:"admin"},{u:"planner",name:"Dispatch Planner",role:"planner"},{u:"nmd",name:"NMD Viewer",role:"viewer"}];
+  const esc=t=>String(t??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  function draw(){
+    $("#ul").innerHTML=users.map((u,i)=>'<tr><td><input data-i="'+i+'" data-k="u" value="'+esc(u.u)+'"></td><td><input data-i="'+i+'" data-k="name" value="'+esc(u.name)+'"></td><td><select data-i="'+i+'" data-k="role">'+["admin","planner","viewer"].map(r=>'<option'+(u.role===r?" selected":"")+'>'+r+'</option>').join("")+'</select></td><td><input data-i="'+i+'" data-k="pw" type="text" value="'+esc(u.pw||"")+'" placeholder="min 4 characters"></td><td><button class="sec" data-del="'+i+'" type="button">✕</button></td></tr>').join("");
+  }
+  draw();
+  $("#ul").addEventListener("input",e=>{const t=e.target;if(t.dataset.i!=null)users[+t.dataset.i][t.dataset.k]=t.value});
+  $("#ul").addEventListener("click",e=>{const b=e.target.closest("[data-del]");if(b){users.splice(+b.dataset.del,1);draw()}});
+  $("#add").onclick=()=>{users.push({u:"",name:"",role:"viewer"});draw()};
+  $("#bf").onchange=async()=>{const f=$("#bf").files[0];if(!f)return;
+    try{backup=JSON.parse(await f.text())}catch(e){log("Not a valid backup file");backup=null;return}
+    const a=backup.docs&&backup.docs["app/auth"];
+    if(a&&a.users&&a.users.length){users=a.users.map(u=>({u:u.u,name:u.name||u.u,role:u.role}));draw()}
+    log("Backup loaded: "+Object.keys(backup.docs||{}).length+" documents, "+users.length+" logins. Type their passwords in step 2.")};
+  async function sha(t){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(t));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
+  $("#go").onclick=async()=>{
+    const U=users.map(u=>({u:String(u.u||"").trim().toLowerCase(),name:String(u.name||"").trim(),role:u.role,pw:u.pw||""})).filter(u=>u.u);
+    const bad=U.find(u=>!/^[a-z0-9._-]{2,30}$/.test(u.u)||u.pw.length<4);
+    if(bad){log("Check login '"+bad.u+"': 2–30 letters/digits and a password of at least 4 characters");return}
+    if(new Set(U.map(u=>u.u)).size!==U.length){log("Each Login ID must be different");return}
+    const first=U.find(u=>u.role==="admin");if(!first){log("Add at least one admin login");return}
+    $("#go").disabled=true;
+    try{
+      await nmdFB.ready;const db=firebase.firestore();
+      for(const u of U){u.gen=await nmdFB.create(u.u,u.pw,1);log("✓ login "+u.u+" ("+u.role+")")}
+      await nmdFB.signIn(first.u,first.pw,first.gen);log("Signed in as "+first.u);
+      const now=new Date().toISOString(),active={};U.forEach(u=>active[nmdFB.key(u.u,u.gen)]=u.role);
+      await db.doc("public/users").set({users:U.map(u=>({u:u.u,name:u.name||u.u,role:u.role,gen:u.gen})),active,updatedAt:now});
+      const auth={users:[]};for(const u of U)auth.users.push({u:u.u,name:u.name||u.u,role:u.role,gen:u.gen,h:await sha("nmd-mis|"+u.u+"|"+u.pw),title:""});
+      auth.updatedAt=now;await db.doc("app/auth").set(auth);log("✓ login list saved");
+      if(backup&&backup.docs){let ok=0;const ks=Object.keys(backup.docs).filter(k=>k!=="app/auth"&&!k.startsWith("public/"));
+        for(const k of ks){try{await db.doc(k).set(backup.docs[k]);ok++}catch(e){log("✗ "+k+" — "+(e.code||e))}}
+        log("✓ imported "+ok+" of "+ks.length+" data documents")}
+      await nmdFB.signOut();
+      log("\nAll done. Open the planner and log in with these IDs and passwords.");
+    }catch(e){log("Stopped: "+(e&&(e.code||e.message)||e)+(e&&e.code==="permission-denied"?" — check that firestore.rules is published, and that setup wasn't already run.":""));$("#go").disabled=false}
+  };
+})();
+</script>
+</body>
+</html>
