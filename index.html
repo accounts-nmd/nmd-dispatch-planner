@@ -86,6 +86,14 @@ tr.dim td{color:var(--muted)}
 .p-full{background:var(--ok-soft);color:var(--ok)}
 .p-part{background:var(--warn-soft);color:var(--warn)}
 .p-none{background:var(--bad-soft);color:var(--bad)}
+.stk tr.grp td{background:var(--surface-2,#F1F5F9);font-weight:600;border-top:2px solid var(--line)}
+.stk tr.grp td .sub{display:inline;margin-left:8px;font-weight:400}
+.stk input.num{width:110px}
+.stk-ok{color:var(--ok)}.stk-nil{color:var(--bad)}
+.stbar{position:sticky;bottom:12px;z-index:6;display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#13213A;color:#fff;border-radius:14px;padding:12px 16px;box-shadow:0 10px 30px rgba(10,20,40,.3)}
+.stbar .grow{flex:1;min-width:200px}
+.stk input.num.chg{border-color:var(--accent,#0E7C86);background:#E9F7F8}
+.stk .dlt{font-size:12px}.stk .dlt.up{color:var(--ok)}.stk .dlt.dn{color:var(--bad)}
 .p-hold{background:var(--hold-soft);color:var(--hold)}
 .pr{display:inline-block;font-family:var(--f-mono);font-size:11px;font-weight:500;border-radius:4px;padding:2px 6px;white-space:nowrap}
 .pr-P1{background:var(--bad);color:var(--surface)}
@@ -364,7 +372,7 @@ body.locked{background:#0A1830}
 .g-card{background:rgba(255,255,255,.97);color:#13213A;border-radius:20px;padding:28px;display:flex;flex-direction:column;gap:12px;box-shadow:0 30px 80px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.4);min-width:0;color-scheme:light}
 .g-card-hd h2{font-family:var(--f-display);font-size:28px;margin:0;letter-spacing:.01em}
 .g-card-hd p{margin:2px 0 6px;color:#5B6B82;font-size:14px}
-.roles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.roles{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
 .roles button{font:inherit;display:flex;flex-direction:column;align-items:flex-start;gap:2px;border:1.5px solid #DFE5EE;background:#fff;color:#13213A;border-radius:14px;padding:12px;cursor:pointer;text-align:left;transition:transform .15s,border-color .15s,box-shadow .15s}
 .roles button:hover{transform:translateY(-2px);border-color:#9FD7DA}
 .roles svg{width:26px;height:26px;color:#0E7C86;margin-bottom:6px}
@@ -406,6 +414,7 @@ body.locked{background:#0A1830}
         <button type="button" data-role="admin" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l8 3v6c0 5-3.4 9.4-8 11-4.6-1.6-8-6-8-11V5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8.5 12l2.5 2.5 4.5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><b>Admin</b><span>Full control</span></button>
         <button type="button" data-role="planner" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 9h18M8 2.5v3M16 2.5v3M7.5 13.5h4M7.5 17h7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><b>Planner</b><span>Plan dispatch</span></button>
         <button type="button" data-role="viewer" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><b>Viewer</b><span>See &amp; print</span></button>
+        <button type="button" data-role="dispatch" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 6h11v10H2zM13 9h4.5l3.5 3.5V16h-8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="6" cy="17.5" r="1.8" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17" cy="17.5" r="1.8" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><b>Dispatch</b><span>FG stock</span></button>
       </div>
       <div class="g-lbl" id="gUsersLbl">Who’s signing in?</div>
       <div class="ulist" id="gUsers" role="group" aria-labelledby="gUsersLbl"></div>
@@ -439,6 +448,7 @@ body.locked{background:#0A1830}
       <button role="tab" data-tab="items" aria-selected="false">Enter qty by item</button>
       <button role="tab" data-tab="pallet" aria-selected="false" hidden data-gone>Pallets &amp; vehicles<span class="n" id="nPal">0</span></button>
       <button role="tab" data-tab="prio" aria-selected="false">Customer priorities<span class="n" id="nPrio">0</span></button>
+      <button role="tab" data-tab="stock" aria-selected="false">FG stock</button>
       <button role="tab" data-tab="orders" aria-selected="false">Pending SO</button>
       <button role="tab" data-tab="hist" aria-selected="false">History</button>
       <button role="tab" data-tab="users" aria-selected="false" data-admin>Users</button>
@@ -451,10 +461,10 @@ body.locked{background:#0A1830}
   <section class="card" id="filterCard" aria-label="Filters">
     <div class="fhd"><h3>Filters <span id="fTabName"></span></h3><span class="hint">Each tab has its own filters</span><span class="fcount" id="fCount"></span><button class="btn sm" id="fToggle" type="button" aria-expanded="true">Hide filters</button></div>
     <div class="fbar" id="fBar">
-      <label class="f" for="fQ" data-ft="today items pallet orders">Search<input id="fQ" type="search" placeholder="PO, SO, item, description…"></label>
-      <label class="f" for="fCust" data-ft="today items pallet orders">Customer<select id="fCust"></select></label>
+      <label class="f" for="fQ" data-ft="today items pallet orders stock">Search<input id="fQ" type="search" placeholder="PO, SO, item, description…"></label>
+      <label class="f" for="fCust" data-ft="today items pallet orders stock">Customer<select id="fCust"></select></label>
       <label class="f" for="fCity" data-ft="today items orders">Ship to city<select id="fCity"></select></label>
-      <label class="f" for="fItem" data-ft="today items pallet orders">Item<select id="fItem"></select></label>
+      <label class="f" for="fItem" data-ft="today items pallet orders stock">Item<select id="fItem"></select></label>
       <label class="f" for="fPrio" data-ft="today items orders">Priority<select id="fPrio"><option value="">All</option><option value="ANY">P1 + P2</option><option value="P1">P1 Urgent</option><option value="P2">P2 High</option><option value="N">Normal</option><option value="HOLD">Hold</option></select></label>
       <label class="f" for="fDue" data-ft="today items orders">Required date<select id="fDue"><option value="">All dates</option><option value="late">Overdue</option><option value="by">Due by dispatch date</option><option value="7">Due within 7 days</option><option value="later">Due later</option></select></label>
       <label class="f" for="fStat" data-ft="today items">Dispatch status<select id="fStat"><option value="">All</option><option value="plan">Planned this date</option><option value="full">PO closed this date</option><option value="left">Still pending after</option><option value="none">Nothing planned</option></select></label>
@@ -603,6 +613,31 @@ body.locked{background:#0A1830}
   </section>
 
   <!-- ORDERS -->
+  <section data-view="stock" class="view" hidden style="display:flex;flex-direction:column;gap:14px">
+    <div class="card">
+      <div class="hd"><h3>FG stock</h3><span class="hint">Finished-goods stock, customer and item wise · updated daily by Dispatch</span></div>
+      <div class="bd toolbar">
+        <label class="f" for="stDate">Stock as on<span class="daynav"><button class="btn sm" id="stPrev" aria-label="Previous day">‹</button><input type="date" id="stDate"><button class="btn sm" id="stNext" aria-label="Next day">›</button><button class="btn sm" id="stToday">Today</button></span></label>
+        <label class="f" for="stShow">Show<select id="stShow"><option value="all">All items</option><option value="in">In stock</option><option value="nil">No stock</option></select></label>
+        <span class="hint" id="stInfo"></span>
+      </div>
+      <div class="bd toolbar" style="padding-top:0">
+        <button class="btn pri" id="stSave" data-stk>Update stock</button>
+        <button class="btn" id="stDiscard" data-stk>Discard changes</button>
+        <button class="btn" id="stTpl" data-stk>Download stock sheet</button>
+        <button class="btn" id="stUp" data-stk>Upload stock sheet</button>
+        <input type="file" id="stFile" accept=".xlsx,.xls,.csv" hidden>
+        <button class="btn" id="stCopy" data-stk>Copy previous day</button>
+        <button class="btn" id="stClr" data-stk>Clear this date</button>
+        <button class="btn" id="stXls">Export · Excel</button>
+        <button class="btn" id="stPdf">Print · PDF</button>
+        <button class="btn" id="stUse" data-plan title="Put this stock as item-wise qty to dispatch on the plan date">Use as qty to dispatch</button>
+      </div>
+    </div>
+    <div class="sum" id="stSum"></div>
+    <div class="card"><div class="tw stk" id="stBody"></div></div>
+    <div class="stbar" id="stPend" hidden></div>
+  </section>
   <section data-view="orders" class="view" hidden>
     <div class="card">
       <div class="hd"><h3>Pending sales orders</h3><span class="hint" id="ordMeta"></span></div>
@@ -648,7 +683,7 @@ body.locked{background:#0A1830}
         <form class="bd" id="uForm" style="display:flex;flex-direction:column;gap:10px">
           <label class="f" for="uLogin">Login<input id="uLogin" autocomplete="off" required></label>
           <label class="f" for="uName">Name<input id="uName" autocomplete="off"></label>
-          <label class="f" for="uRole">Role<select id="uRole"><option value="planner">Planner</option><option value="viewer">Viewer</option><option value="admin">Admin</option></select></label>
+          <label class="f" for="uRole">Role<select id="uRole"><option value="planner">Planner</option><option value="viewer">Viewer</option><option value="dispatch">Dispatch (FG stock)</option><option value="admin">Admin</option></select></label>
           <label class="f" for="uPass">Password<input id="uPass" type="text" autocomplete="new-password" placeholder="Leave blank to keep the current one"></label>
           <div class="toolbar"><button class="btn pri" type="submit" id="uSave">Save user</button><button class="btn" type="button" id="uReset">New user</button></div>
           <p class="hint" style="margin:0">Passwords are stored only as a one-way hash, same scheme as NMD MIS and Sales Tracker. This is a sign-in gate for the team; who can open the link at all is still set in the page’s Share menu.</p>
@@ -689,8 +724,8 @@ const short=c=>String(c||"").replace(/ (Pvt\.?|Private) (Ltd\.?|Limited)$/i,"").
 const PRIO_LABEL={P1:"P1 Urgent",P2:"P2 High",HOLD:"Hold"};
 const SRC=["Outlook mail","Oral / phone call","WhatsApp","Customer visit / meeting","Other"];
 const F0={q:"",cust:"",city:"",item:"",prio:"",due:"",stat:""};
-const FTABS=["today","items","pallet","orders"];
-const TABNAME={today:"Dispatch",items:"Enter qty by item",pallet:"Pallets & vehicles",prio:"Customer priorities",orders:"Pending SO"};
+const FTABS=["today","items","pallet","orders","stock"];
+const TABNAME={today:"Dispatch",items:"Enter qty by item",pallet:"Pallets & vehicles",prio:"Customer priorities",orders:"Pending SO",stock:"FG stock"};
 S.fs={};for(const t of FTABS)S.fs[t]={...F0};
 try{const sv=JSON.parse(localStorage.getItem("nmd-dp-filters2")||"null");if(sv)for(const t of FTABS)if(sv[t])S.fs[t]={...F0,...sv[t]}}catch(_){}
 S.f=S.fs.today;
@@ -732,9 +767,10 @@ function renderFilters(R){
 function setF(k,v){S.fs[S.tab]={...S.f,[k]:v};S.f=S.fs[S.tab];saveFs();render()}
 // ---------- sign-in & roles ----------
 S.auth=null;S.me=null;S.loginRole="planner";
-const ROLE_NAME={admin:"Admin",planner:"Planner",viewer:"Viewer"};
+const ROLE_NAME={admin:"Admin",planner:"Planner",viewer:"Viewer",dispatch:"Dispatch"};
 const isAdmin=()=>S.local||(S.me&&S.me.role==="admin");
 const canPlan=()=>S.local||(S.canWrite&&S.me&&(S.me.role==="admin"||S.me.role==="planner"));
+const canStock=()=>S.local||(S.canWrite&&S.me&&["admin","dispatch"].includes(S.me.role));
 const roP=()=>canPlan()?"":" disabled";
 const roA=()=>(isAdmin()&&S.canWrite)?"":" disabled";
 async function sha(t){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(t));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
@@ -751,10 +787,11 @@ function checkSession(){
 function lock(on){document.body.classList.toggle("locked",on);$("#gate").hidden=!on;
   if(!on){applyRole();render()}else{setTimeout(()=>{const t=S.loginUser?$("#gPass"):document.querySelector("#gUsers [data-guser]")||document.querySelector('#gRoles [aria-pressed="true"]');t&&t.focus()},50)}}
 function applyRole(){
-  const v=S.me&&S.me.role==="viewer";
+  const v=isViewer();
   document.querySelectorAll("nav.tabs [data-tab]").forEach(b=>{const t=b.dataset.tab;b.hidden=t==="pallet"||(t==="users"&&!isAdmin())||(v&&(t==="items"||t==="pallet"||t==="prio"||t==="hist"))});
   if(S.tab==="pallet"||(S.tab==="users"&&!isAdmin())||(v&&(S.tab==="items"||S.tab==="pallet"||S.tab==="prio"||S.tab==="hist")))setTab("today");
   document.querySelectorAll("[data-plan]").forEach(b=>b.hidden=!canPlan());
+  document.querySelectorAll("[data-stk]").forEach(b=>b.hidden=!canStock());
   ["#btnOrdUpload","#btnQtyCopy","#btnQtyClear","#btnPalUp","#btnPoUp"].forEach(id=>{const e=$(id);if(e)e.hidden=!canPlan()});
   $("#fifoBasis").disabled=!isAdmin();
   ["#vName","#vPal","#btnAddVeh"].forEach(id=>{$(id).disabled=!isAdmin()});
@@ -781,7 +818,7 @@ const queues={};
 function persist(path,data,need){
   if(!S.db||S.local)return Promise.resolve();
   if(!S.canWrite){toast("You have view access only — changes are not saved");return Promise.resolve()}
-  if(need==="admin"?!isAdmin():!canPlan()){toast("Your login can't change this");return Promise.resolve()}
+  if(need==="admin"?!isAdmin():need==="stock"?!canStock():!canPlan()){toast("Your login can't change this");return Promise.resolve()}
   const q=queues[path]||(queues[path]={chain:Promise.resolve()});
   q.chain=q.chain.then(()=>S.db.doc(path).set(data)).catch(e=>{
     if(e&&e.code==="invalid_argument"&&JSON.stringify(data).length<250000){S.canWrite=false;renderBanners();toast("Read-only: your access can't change shared data")}
@@ -868,6 +905,7 @@ function render(){
   if(S.tab==="pallet")renderPallet(R);
   if(S.tab==="prio")renderPrio(R);
   if(S.tab==="orders")renderOrders(R);
+  if(S.tab==="stock")renderStock();
   if(S.tab==="users")renderUsers();
   if(S.tab==="hist")renderHistTab();
   $("#nPrio").textContent=Object.values(S.prio.lines).filter(p=>p.level).length;
@@ -1178,7 +1216,7 @@ function renderItems(R){
   $("#itemList").innerHTML=vis.length?vis.map(it=>'<div class="it" role="listitem" tabindex="0" data-item="'+esc(it.item)+'" aria-current="'+(it.item===S.sel)+'">'+
     '<span class="c">'+esc(it.item)+(it.prio?' <span class="pr pr-P1">P</span>':"")+(it.late?' <span class="pill p-none">'+it.late+' late</span>':"")+'</span>'+
     '<span class="q">'+(it.given!=null?'<strong>'+n(it.plan)+'</strong> / ':"")+n(it.pend)+'</span>'+
-    '<span class="d">'+esc(it.desc)+' · '+esc(short(it.cust))+' · '+it.lines.length+' PO'+(it.ps?" · "+n(it.ps)+"/plt":"")+'</span></div>').join(""):'<div class="empty">No items match.</div>';
+    '<span class="d">'+esc(it.desc)+' · '+esc(short(it.cust))+' · '+it.lines.length+' PO'+(()=>{const so=stockOf(it.item);return so?' · <b class="'+(so.qty>0?"stk-ok":"stk-nil")+'">Stock '+n(so.qty)+'</b>':""})()+'</span></div>').join(""):'<div class="empty">No items match.</div>';
   renderSheet(R);
 }
 function renderSheet(R){
@@ -1200,7 +1238,7 @@ function renderSheet(R){
   }
   $("#sheet").innerHTML=
     '<div class="hd"><h3>'+esc(it.item)+' · '+esc(it.desc)+'</h3></div>'+
-    '<div class="bd"><dl class="meta"><dt>Customer</dt><dd>'+esc(it.cust)+'</dd><dt>Product</dt><dd>'+esc(it.desc)+'</dd><dt>Item no.</dt><dd class="code">'+esc(it.item)+'</dd><dt>Alternative code</dt><dd class="code">'+esc(it.alt||"—")+'</dd></dl></div>'+
+    '<div class="bd"><dl class="meta"><dt>Customer</dt><dd>'+esc(it.cust)+'</dd><dt>Product</dt><dd>'+esc(it.desc)+'</dd><dt>Item no.</dt><dd class="code">'+esc(it.item)+'</dd><dt>Alternative code</dt><dd class="code">'+esc(it.alt||"—")+'</dd>'+(()=>{const so=stockOf(it.item);if(!so)return'<dt>FG stock</dt><dd class="muted">Not updated yet</dd>';const bal=so.qty-it.plan;return'<dt>FG stock</dt><dd><strong class="'+(so.qty>0?"stk-ok":"stk-nil")+'">'+n(so.qty)+' '+esc(it.uom)+'</strong> <span class="muted">as on '+fd(so.date)+(so.date!==S.planDate?" (latest update)":"")+'</span>'+(it.plan?' · planned <strong>'+n(it.plan)+'</strong> · '+(bal<0?'<span class="late">'+n(-bal)+' more than stock</span>':'<span style="color:var(--ok)">'+n(bal)+' left after plan</span>'):"")+'</dd>'})()+'</dl></div>'+
     '<div class="tw"><table><thead><tr><th class="n">#</th><th>Priority</th><th>Customer PO</th><th>PO date</th><th>Ship to</th><th>Required</th><th class="n">Pending</th><th>Dispatch on</th><th class="n">Dispatch qty</th><th class="n">Balance</th></tr></thead><tbody>'+
     ls.map(l=>'<tr class="click'+(l.plan>0?"":" dim")+'" data-key="'+esc(l.key)+'" tabindex="0"><td class="n muted">'+l.ord+'</td>'+
       '<td><select class="ps" data-ps="'+esc(l.key)+'" aria-label="Priority for PO '+esc(poShow(l.po))+'"'+ro+'>'+["","P1","P2","HOLD"].map(v=>'<option value="'+v+'"'+(l.level===v?" selected":"")+'>'+(v?PRIO_LABEL[v]:"Normal")+'</option>').join("")+'</select>'+(l.p&&l.p.src?'<span class="sub">'+esc(l.p.src)+'</span>':"")+'</td>'+
@@ -1217,7 +1255,7 @@ function renderSheet(R){
     '<div class="dq">'+
       '<label for="dqIn">Qty to dispatch<input id="dqIn" type="number" min="0" step="1" inputmode="numeric" value="'+(it.given!=null?it.given:"")+'" placeholder="0"'+ro+'></label>'+
       (ps?'<label for="dqPal">or pallets<input id="dqPal" type="number" min="0" step="1" inputmode="numeric" value="'+(it.given!=null?Math.floor(it.given/ps):"")+'" placeholder="0"'+ro+'></label>':"")+
-      '<div class="toolbar"><button class="btn sm" id="dqAll"'+ro+'>= All pending ('+n(it.pend)+')</button><button class="btn sm" id="dqClr"'+ro+'>Clear</button></div>'+
+      '<div class="toolbar">'+(()=>{const so=stockOf(it.item);return so?'<button class="btn sm" id="dqStk"'+ro+'>= FG stock ('+n(so.qty)+')</button>':""})()+'<button class="btn sm" id="dqAll"'+ro+'>= All pending ('+n(it.pend)+')</button><button class="btn sm" id="dqClr"'+ro+'>Clear</button></div>'+
       '<div class="msg">'+msg+'<div class="hint">Enter saves and moves to the next item.</div></div></div>';
 }
 function setQty(item,val){
@@ -1594,6 +1632,7 @@ function handleBtn(e){
   const he=t.closest("[data-hexp]");if(he){const p=S.plans.find(x=>x.date===he.dataset.hexp);if(p)saveFile("Dispatch Plan "+fd(p.date).replace(/\//g,"-")+" (saved).xlsx",buildBook(p.lines.map(l=>({...l,p:null,fdate:l.reqDate||"9999",...palletize(l.plan,l.ps||0)})),p.date,p.veh));return}
   const vd=t.closest("[data-vdel]");if(vd){S.vehicles={list:(S.vehicles.list||[]).filter(v=>v.name!==vd.dataset.vdel)};saveVehicles();render();return}
   if(t.id==="btnPrune"){const live=new Set(compute().lines.map(l=>l.key));for(const k of Object.keys(S.prio.lines))if(!live.has(k))delete S.prio.lines[k];savePrio();render();return}
+  if(t.id==="dqStk"){const so=stockOf(S.sel);if(so){setQty(S.sel,so.qty);render()}return}
   if(t.id==="dqAll"){const it=compute().items[S.sel];if(it){setQty(S.sel,it.pend);render()}return}
   if(t.id==="dqClr"){setQty(S.sel,"");render();return}
   const um=t.closest("[data-unman]");if(um){setManual(um.dataset.unman,"");render();return}
@@ -1631,9 +1670,117 @@ $("#btnAddVeh").addEventListener("click",()=>{const nm=$("#vName").value.trim(),
 $("#btnOrdUpload").addEventListener("click",()=>$("#ordFile").click());
 $("#ordFile").addEventListener("change",e=>{const f=e.target.files[0];if(f)uploadOrders(f);e.target.value=""});
 $("#btnQtyUpload").addEventListener("click",()=>$("#qtyFile").click());
+
+// ---------- FG stock (customer & item wise, daily) ----------
+S.stockAll={};S.stockDate=todayISO();S.stDraft={};
+const stEff=D=>{D=D||S.stockDate;const dr=S.stDraft[D];return dr?dr.items:((stDoc(D)||{}).items||{})};
+function stChanges(D){D=D||S.stockDate;const dr=S.stDraft[D];if(!dr)return[];const sv=(stDoc(D)||{}).items||{};const ks=new Set([...Object.keys(sv),...Object.keys(dr.items)]);return[...ks].filter(k=>(dr.items[k]??null)!==(sv[k]??null))}
+function stSetDraft(items,meta){const D=S.stockDate,old=S.stDraft[D];S.stDraft={...S.stDraft,[D]:{items,meta:{...((old&&old.meta)||{}),...(meta||{})}}};if(!stChanges(D).length&&!(meta&&Object.keys(meta).length)){const x={...S.stDraft};delete x[D];S.stDraft=x}}
+window.addEventListener("beforeunload",e=>{if(Object.keys(S.stDraft||{}).some(d=>stChanges(d).length)){e.preventDefault();e.returnValue=""}});
+const stDoc=d=>(S.stockAll||{})[d||S.stockDate]||null;
+// latest updated FG stock on or before a date (default: plan date)
+function stockAsOf(d){d=d||S.planDate;const ds=Object.keys(S.stockAll||{}).filter(x=>x<=d&&Object.keys((S.stockAll[x].items)||{}).length).sort();const k=ds.pop();return k?{date:k,items:S.stockAll[k].items||{}}:null}
+function stockOf(item,d){const a=stockAsOf(d);return a?{qty:+(a.items[item]||0),date:a.date,set:a.items[item]!=null}:null}
+function stPrevDate(d){return Object.keys(S.stockAll||{}).filter(x=>x<d&&Object.keys((S.stockAll[x].items)||{}).length).sort().pop()||""}
+function stockRows(){
+  const D=S.stockDate,doc=stDoc(D),dr=S.stDraft[D],saved=(doc&&doc.items)||{},st=dr?dr.items:saved,meta={...((doc&&doc.meta)||{}),...((dr&&dr.meta)||{})},pd=stPrevDate(D),prev=pd?(S.stockAll[pd].items||{}):{};
+  const m={},owners={};
+  for(const r of ((S.orders&&S.orders.rows)||[])){const k=r.cust+"|"+r.item;const x=m[k]||(m[k]={cust:r.cust,item:r.item,desc:r.desc,alt:r.alt,uom:r.uom||"NOS",pend:0,lines:0,late:0,val:0,rate:r.rate,minReq:"9999"});
+    x.pend+=r.pend;x.lines++;x.val+=r.pend*r.rate;if(r.reqDate&&r.reqDate<D)x.late++;if(r.reqDate&&r.reqDate<x.minReq)x.minReq=r.reqDate;(owners[r.item]=owners[r.item]||new Set()).add(r.cust)}
+  const rows=Object.values(m);
+  for(const it of Object.keys(st))if(!owners[it]){const mt=meta[it]||{};rows.push({cust:mt.cust||"(other items)",item:it,desc:mt.desc||"",alt:mt.alt||"",uom:"NOS",pend:0,lines:0,late:0,val:0,rate:0,minReq:"9999",nopend:true})}
+  // an item ordered by several customers shares one stock figure: split it in order of earliest required date
+  const byItem={};for(const r of rows)(byItem[r.item]=byItem[r.item]||[]).push(r);
+  for(const[it,rs]of Object.entries(byItem)){let left=st[it]!=null?+st[it]:null;rs.sort((a,b)=>a.minReq.localeCompare(b.minReq));
+    for(const r of rs){r.stock=st[it]!=null?+st[it]:null;r.chg=(st[it]??null)!==(saved[it]??null);r.prev=prev[it]!=null?+prev[it]:null;r.shared=rs.length>1?rs.length:0;
+      if(left==null){r.alloc=0}else{r.alloc=r.nopend?left:Math.min(left,r.pend);left-=r.alloc}
+      r.status=r.nopend?"nopend":r.stock==null||r.stock===0?"nil":r.alloc>=r.pend?"cover":"short"}}
+  return{rows,doc,pd}
+}
+function stFiltered(){const X=stockRows(),show=$("#stShow").value;
+  const rows=X.rows.filter(r=>passF({...r,so:"",po:"",loc:""})&&(show==="all"||(show==="in"?r.stock>0:!(r.stock>0))));
+  rows.sort((a,b)=>(!!a.nopend-!!b.nopend)||a.cust.localeCompare(b.cust)||a.item.localeCompare(b.item));return{...X,rows}}
+function renderStock(){
+  $("#stDate").value=S.stockDate;
+  {const ch=stChanges(),pb=$("#stPend");pb.hidden=!ch.length||!canStock();$("#stSave").disabled=!ch.length;$("#stDiscard").hidden=!ch.length||!canStock();
+   $("#stSave").textContent=ch.length?"Update stock ("+ch.length+")":"Update stock";
+   if(ch.length)pb.innerHTML='<div class="grow"><b>'+ch.length+' change'+(ch.length>1?"s":"")+' not updated yet</b> — others still see the last updated stock.</div><button class="btn" type="button" onclick="document.getElementById(\'stDiscard\').click()">Discard</button><button class="btn pri" type="button" onclick="document.getElementById(\'stSave\').click()">Update stock ('+ch.length+')</button>'}
+  if(!S.orders&&!stDoc()){$("#stBody").innerHTML='<div class="empty">Upload the pending SO report first, then enter FG stock.</div>';$("#stSum").innerHTML="";$("#stInfo").textContent="";return}
+  const X=stFiltered(),ed=canStock(),doc=X.doc;
+  $("#stInfo").innerHTML=doc&&doc.updatedAt?'Updated '+esc(dt(doc.updatedAt))+(doc.updatedBy?' by <b>'+esc(doc.updatedBy)+'</b>':""):'<span class="late">Not updated for '+fd(S.stockDate)+' yet</span>'+(X.pd?' · last stock '+fd(X.pd):"");
+  const all=stockRows().rows,uniq={},codes=new Set();all.forEach(r=>{codes.add(r.item);if(r.stock>0)uniq[r.item]=r});
+  const tot=Object.values(uniq).reduce((s,r)=>s+r.stock,0),val=Object.values(uniq).reduce((s,r)=>s+r.stock*(r.rate||0),0);
+  const t=(c,ic,l,v,s2)=>'<div><span class="ic '+c+'">'+ic+'</span><div class="l">'+esc(l)+'</div><div class="v">'+esc(v)+'</div><div class="s">'+esc(s2)+'</div></div>';
+  $("#stSum").innerHTML=t("c1",IC.box,"FG stock",n(tot),"nos on "+fd(S.stockDate))+t("c2",IC.box,"Items in stock",Object.keys(uniq).length,"of "+codes.size+" FG codes")+t("c4",IC.box,"No stock",codes.size-Object.keys(uniq).length,"FG codes at nil")+t("c5",IC.inr,"Stock value",inr(val),"at SO rate");
+  if(!X.rows.length){$("#stBody").innerHTML='<div class="empty">No items match.</div>';return}
+  const G={};X.rows.forEach(r=>(G[r.cust]=G[r.cust]||[]).push(r));
+  $("#stBody").innerHTML='<table><thead><tr><th>Item</th><th>Alt code</th><th class="n">FG stock '+fd(S.stockDate).slice(0,5)+'</th><th class="n">Prev. '+(X.pd?fd(X.pd).slice(0,5):"day")+'</th></tr></thead><tbody>'+
+    Object.entries(G).map(([c,rs])=>{const seen=new Set();const cs=rs.reduce((s,r)=>{if(seen.has(r.item))return s;seen.add(r.item);return s+(r.stock||0)},0);return'<tr class="grp"><td colspan="4">'+esc(c)+'<span class="sub">'+rs.length+' item'+(rs.length>1?"s":"")+' · '+rs.filter(r=>r.stock>0).length+' in stock · '+n(cs)+' nos</span></td></tr>'+
+      rs.map(r=>{const d=r.stock!=null&&r.prev!=null?r.stock-r.prev:null;return'<tr><td style="min-width:260px"><span class="code">'+esc(r.item)+'</span> '+esc(r.desc)+(r.shared?'<span class="sub">same FG code for '+r.shared+' customers – one stock figure</span>':"")+'</td><td class="code">'+esc(r.alt||"—")+'</td>'+
+        '<td class="n">'+(ed?'<input class="num'+(r.chg?" chg":"")+'" type="number" min="0" step="1" inputmode="numeric" data-stk="'+esc(r.item)+'" value="'+(r.stock??"")+'" placeholder="0" aria-label="FG stock '+esc(r.item)+'">':'<strong>'+(r.stock!=null?n(r.stock):"—")+'</strong>')+'</td>'+
+        '<td class="n muted">'+(r.prev!=null?n(r.prev):"—")+(d?'<span class="sub dlt '+(d>0?"up":"dn")+'">'+(d>0?"+":"")+n(d)+'</span>':"")+'</td></tr>'}).join("")}).join("")+'</tbody></table>';
+}
+async function saveStock(items,note,extra){
+  const D=S.stockDate,cur=stDoc(D)||{date:D,items:{}};const w=whoNow();
+  const doc={...cur,...(extra||{}),date:D,items,updatedAt:new Date().toISOString(),updatedBy:w.by||""};
+  S.stockAll={...S.stockAll,[D]:doc};await persist("stock/"+D,doc,"stock");
+  if(note)logAct("Stock",note,D,"",{qty:Object.values(items).reduce((s,v)=>s+(+v||0),0)});render();
+}
+function setStockItem(item,val){if(!canStock())return;const items={...stEff()};const old=items[item];
+  if(val===""||val==null)delete items[item];else items[item]=Math.max(0,Math.round(+val||0));
+  if(old===items[item])return;stSetDraft(items);render()}
+$("#stSave").addEventListener("click",async()=>{const D=S.stockDate,ch=stChanges(D),dr=S.stDraft[D];if(!dr||!ch.length){toast("No changes to update");return}
+  const sv=(stDoc(D)||{}).items||{};const det=ch.slice(0,15).map(k=>k+": "+(sv[k]!=null?n(sv[k]):"—")+" → "+(dr.items[k]!=null?n(dr.items[k]):"—")).join("; ")+(ch.length>15?" …":"");
+  await saveStock({...dr.items},null,{meta:{...((stDoc(D)||{}).meta||{}),...(dr.meta||{})}});
+  const x={...S.stDraft};delete x[D];S.stDraft=x;
+  logAct("Stock","Stock updated",D,ch.length+" item"+(ch.length>1?"s":"")+" · "+det,{qty:Object.values(dr.items).reduce((a,v)=>a+(+v||0),0)});
+  render();toast("FG stock updated for "+fd(D)+" · "+ch.length+" change"+(ch.length>1?"s":""))});
+$("#stDiscard").addEventListener("click",()=>twoClick($("#stDiscard"),"",()=>{const x={...S.stDraft};delete x[S.stockDate];S.stDraft=x;render();toast("Changes discarded")}));
+document.addEventListener("change",e=>{const t=e.target;if(t.dataset&&t.dataset.stk!=null&&t.tagName==="INPUT")setStockItem(t.dataset.stk,t.value)});
+document.addEventListener("keydown",e=>{const t=e.target;if(e.key==="Enter"&&t.dataset&&t.dataset.stk!=null&&t.tagName==="INPUT"){e.preventDefault();const all=[...document.querySelectorAll('#stBody input[data-stk]')];const i=all.indexOf(t);t.blur();setTimeout(()=>{const nx=[...document.querySelectorAll('#stBody input[data-stk]')][i+1];if(nx){nx.focus();nx.select()}},60)}});
+const stSet=d=>{if(!d)return;S.stockDate=d;render()};
+$("#stDate").addEventListener("change",e=>stSet(e.target.value));
+$("#stPrev").addEventListener("click",()=>stSet(addDays(S.stockDate,-1)));
+$("#stNext").addEventListener("click",()=>stSet(addDays(S.stockDate,1)));
+$("#stToday").addEventListener("click",()=>stSet(todayISO()));
+$("#stShow").addEventListener("input",()=>render());
+$("#stCopy").addEventListener("click",()=>{const pd=stPrevDate(S.stockDate);if(!pd){toast("No earlier stock to copy");return}
+  stSetDraft({...(S.stockAll[pd].items||{})},{...(S.stockAll[pd].meta||{})});render();toast("Copied "+fd(pd)+" — check and press Update stock")});
+$("#stClr").addEventListener("click",()=>{if(!Object.keys(stEff()).length){toast("Nothing to clear");return}stSetDraft({});render();toast("Cleared on screen — press Update stock to save")});
+$("#stTpl").addEventListener("click",()=>{const X=stockRows();if(!X.rows.length){toast("Upload the pending SO report first");return}
+  const seen=new Set(),rows=[];X.rows.sort((a,b)=>a.cust.localeCompare(b.cust)||a.item.localeCompare(b.item)).forEach(r=>{rows.push({"Customer":r.cust,"Item Code":r.item,"Description":r.desc,"Alt Code":r.alt||"","FG Stock":seen.has(r.item)?"(same as above)":(r.stock??"")});seen.add(r.item)});
+  const wb=XLSX.utils.book_new(),ws=XLSX.utils.json_to_sheet(rows);ws["!cols"]=[32,12,40,14,12].map(w=>({wch:w}));XLSX.utils.book_append_sheet(wb,ws,"FG stock");
+  const h=XLSX.utils.aoa_to_sheet([["How to fill"],["Enter the FG stock (nos) in the 'FG Stock' column for each item. Blank = no change."],["An FG code used by two customers is listed twice; fill the first row only (stock is per FG code)."],["New FG codes not in the list can be added as new rows with Item Code and FG Stock."],["Upload with 'Upload stock sheet' on the FG stock tab. Stock date = the date selected there ("+fd(S.stockDate)+")."]]);h["!cols"]=[{wch:95}];XLSX.utils.book_append_sheet(wb,h,"How to fill");
+  saveFile("FG stock sheet "+fd(S.stockDate).replace(/\//g,"-")+".xlsx",wb)});
+$("#stUp").addEventListener("click",()=>$("#stFile").click());
+$("#stFile").addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
+  try{const wb=await readBook(f);
+    const T=findTable(wb,h=>{const ff=re=>h.findIndex(x=>re.test(x));const m={item:ff(/^itemcode$|^item$|^fgcode$|^code$|^itemno$/),alt:ff(/^altcode$|^alternate/),qty:ff(/^fgstock$|^stock$|^stockqty$|^closingstock$|^qty$|^availableqty$|^fgqty$/),desc:ff(/^description$|^itemdescription$/),cust:ff(/^customer$|^partyname$|^partydescription$/)};return(m.item>=0||m.alt>=0)&&m.qty>=0?m:null});
+    if(!T){toast("Columns not found. Need Item Code and FG Stock.");return}
+    const res=itemResolver(),items={...stEff()},meta={};let ok=0,nw=0;
+    for(const r of T.rows){const raw=String(r[T.map.qty]??"").trim();if(raw===""||/same as above/i.test(raw))continue;const code0=String(T.map.item>=0?r[T.map.item]:"").trim();
+      let code=res(code0,T.map.alt>=0?r[T.map.alt]:"");if(!code){if(!code0)continue;code=code0.toUpperCase();nw++;meta[code]={desc:T.map.desc>=0?String(r[T.map.desc]||""):"",cust:T.map.cust>=0?String(r[T.map.cust]||""):"",alt:T.map.alt>=0?String(r[T.map.alt]||""):""}}
+      items[code]=Math.max(0,Math.round(num(raw)));ok++}
+    if(!ok){toast("No stock values found in that file");return}
+    stSetDraft(items,meta);render();
+    toast(ok+" stock values loaded for "+fd(S.stockDate)+(nw?" · "+nw+" new FG codes":"")+" — check and press Update stock");
+  }catch(err){console.error(err);toast("Couldn't read that file. Save it as .xlsx and try again.")}});
+$("#stXls").addEventListener("click",()=>{const X=stFiltered();if(!X.rows.length){toast("Nothing to export");return}
+  const rows=X.rows.map(r=>({"Customer":r.cust,"Item Code":r.item,"Description":r.desc,"Alt Code":r.alt||"","FG stock":r.stock??"",["Prev. stock "+(X.pd?fd(X.pd):"")]:r.prev??"","Change":r.stock!=null&&r.prev!=null?r.stock-r.prev:""}));
+  const wb=XLSX.utils.book_new(),ws=XLSX.utils.json_to_sheet(rows);ws["!cols"]=[32,12,40,14,11,16,9].map(w=>({wch:w}));XLSX.utils.book_append_sheet(wb,ws,"FG stock "+fd(S.stockDate).replace(/\//g,"-"));
+  saveFile("FG stock "+fd(S.stockDate).replace(/\//g,"-")+".xlsx",wb)});
+$("#stPdf").addEventListener("click",()=>{const X=stFiltered();if(!X.rows.length){toast("Nothing to print");return}const d=pdfDoc();if(!d)return;
+  pdfHead(d,"FG Stock "+fd(S.stockDate),longDate(S.stockDate)+(X.doc&&X.doc.updatedBy?" · updated by "+X.doc.updatedBy:""));
+  const body=[];const G={};X.rows.forEach(r=>(G[r.cust]=G[r.cust]||[]).push(r));
+  for(const[c,rs]of Object.entries(G)){body.push([{content:c,colSpan:5,styles:{fontStyle:"bold",fillColor:[230,240,240]}}]);rs.forEach(r=>body.push([r.item,r.desc,r.alt||"",r.stock!=null?n(r.stock):"-",r.prev!=null?n(r.prev):"-"]))}
+  d.autoTable({...TS,startY:25,head:[["Item","Description","Alt code","FG stock","Prev. "+(X.pd?fd(X.pd).slice(0,5):"")]],body,columnStyles:{0:{cellWidth:24},2:{cellWidth:30},3:{halign:"right",cellWidth:28},4:{halign:"right",cellWidth:28}}});
+  pdfFoot(d);saveBytes("FG Stock "+fd(S.stockDate).replace(/\//g,"-")+".pdf",d.output("arraybuffer"))});
+$("#stUse").addEventListener("click",()=>{if(!canPlan())return;const doc=stDoc();if(!doc||!Object.keys(doc.items||{}).length){toast("No stock for "+fd(S.stockDate));return}
+  const codes=new Set(((S.orders&&S.orders.rows)||[]).map(r=>r.item));const it={};for(const[k,v]of Object.entries(doc.items))if(codes.has(k)&&v>0)it[k]=v;
+  twoClick($("#stUse"),"Click again: set qty to dispatch on "+fd(S.planDate),async()=>{S.qty={...S.qty,items:it,updatedAt:new Date().toISOString()};await saveQty();logAct("Qty","Qty from FG stock",S.planDate,"FG stock of "+fd(S.stockDate)+" · "+Object.keys(it).length+" items");render();toast(Object.keys(it).length+" items set as qty to dispatch on "+fd(S.planDate))})});
 // ---------- PO-wise qty sheet ----------
 $("#btnPoTpl").addEventListener("click",()=>{if(!S.orders){toast("Upload a pending report first");return}
-  const L=compute().lines.filter(l=>l.pend>0&&l.level!=="HOLD").sort((a,b)=>a.cust.localeCompare(b.cust)||a.loc.localeCompare(b.loc)||a.po.localeCompare(b.po)||a.item.localeCompare(b.item));
+  const L=compute().lines.filter(l=>l.pend>0&&l.level!=="HOLD").sort((a,b)=>a.cust.localeCompare(b.cust)||a.item.localeCompare(b.item)||(a.ord||0)-(b.ord||0));
   if(!L.length){toast("No pending PO lines");return}
   const rows=L.map(l=>{const d=rowDate(l),q=d===S.planDate?(l.manual?l.plan:null):rowQty(l);return{"Customer":l.cust,"Ship to city":l.loc,"Customer PO":poShow(l.po),"PO date":fd(l.poDate),"Sales Order":l.so,"Item Code":l.item,"Description":l.desc,"Alt Code":l.alt||"","Required date":fd(l.reqDate),"Priority":l.level||"Normal","Pending qty":l.pend,"Dispatch on":fd(d),"Dispatch qty":q==null?"":q}});
   const wb=XLSX.utils.book_new();const ws=XLSX.utils.json_to_sheet(rows);ws["!cols"]=[30,14,14,11,18,11,34,13,12,9,11,12,12].map(w=>({wch:w}));ws["!autofilter"]={ref:"A1:M"+(rows.length+1)};XLSX.utils.book_append_sheet(wb,ws,"PO qty");
@@ -1916,7 +2063,7 @@ function pdfDayPlan(lines,date,veh,label,ttl){
   pdfFoot(d);
   saveBytes("Dispatch Plan "+fd(date).replace(/\//g,"-")+(ttl?" "+ttl.replace(/[\\\/:*?"<>|]/g," "):"")+(label?" (saved)":"")+".pdf",d.output("arraybuffer"));
 }
-const isViewer=()=>!S.local&&!!S.me&&S.me.role==="viewer";
+const isViewer=()=>!S.local&&!!S.me&&(S.me.role==="viewer"||S.me.role==="dispatch");
 function approvedPlan(d){d=d||S.planDate;const p=S.plans.find(x=>x.date===d&&!isClosed(x));if(!p)return null;
   if(pStatus(p)==="approved")return p;
   if(p.approvedSnap)return{...p,...p.approvedSnap,status:"approved",_pending:true,_cur:p};return null}
@@ -1987,6 +2134,7 @@ function attachData(db){
   db.doc("app/settings").onSnapshot(s=>{if(s.exists)S.settings={fifo:"req",...s.data()};render()},()=>{});
   db.doc("app/pallets").onSnapshot(s=>{S.pallets=s.exists?{...s.data(),items:{...(s.data().items||{})}}:{items:{}};const a=document.activeElement;if(a&&a.dataset&&a.dataset.pal!=null)return;render()},()=>{});
   db.collection("log").orderBy("at","desc").limit(1000).onSnapshot(s=>{S.log=s.docs.map(d=>({...d.data(),id:d.id}));if(S.tab==="hist")renderHistTab()},()=>{});
+  db.collection("stock").orderBy("date","desc").limit(120).onSnapshot(sn=>{const m={};sn.docs.forEach(d=>m[d.id]=d.data());S.stockAll=m;const a=document.activeElement;if(a&&a.dataset&&a.dataset.stk!=null)return;if(S.tab==="stock"||S.tab==="items")render()},()=>{});
   db.doc("app/disp").onSnapshot(s=>{S.dispMap=s.exists?{...(s.data().lines||{})}:{};render()},()=>{});
   db.doc("app/contacts").onSnapshot(s=>{S.contacts=s.exists?{list:(s.data().list||[]).map(c=>({...c}))}:{list:[]};if($("#shBox"))renderShareContacts()},()=>{});
   db.doc("app/vehicles").onSnapshot(s=>{S.vehicles=s.exists?{list:(s.data().list||[]).map(v=>({...v}))}:{list:[]};render()},()=>{});
@@ -1997,7 +2145,7 @@ function attachData(db){
 }
 async function boot(){
   document.body.classList.add("locked");$("#gate").hidden=false;$("#gGo").disabled=true;$("#gGo").textContent="Connecting…";
-  const h=(location.hash||"").slice(1);if(["today","items","prio","orders","hist","users"].includes(h))S.tab=h;
+  const h=(location.hash||"").slice(1);if(["today","items","prio","orders","stock","hist","users"].includes(h))S.tab=h;
   let db=null,user=null;
   try{if(window.claude&&claude.use)[db,user]=await Promise.all([claude.use("db"),claude.use("user")])}catch(_){}
   if(user){try{if(await user.can("data.write")===false)S.canWrite=false}catch(_){}}
