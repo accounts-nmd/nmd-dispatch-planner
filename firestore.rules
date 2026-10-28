@@ -4,6 +4,7 @@ rules_version = '2';
 // No changes needed: who may do what comes from the app's own logins.
 //   Admin   : everything, including logins
 //   Planner : plans, qty, priorities, pending SO
+//   Dispatch: read + daily FG stock
 //   Viewer  : read only
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -41,6 +42,12 @@ service cloud.firestore {
     match /plans/{rest=**} {
       allow read: if isUser();
       allow write: if hasRole(['admin', 'planner']);
+    }
+
+    // Daily FG stock – Dispatch and Admin update it
+    match /stock/{date} {
+      allow read: if isUser();
+      allow write: if hasRole(['admin', 'dispatch']);
     }
 
     // Activity history: everyone signed in adds entries, only Admin deletes
