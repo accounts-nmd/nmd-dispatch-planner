@@ -11,5 +11,5 @@ window.NMD_FIREBASE_CONFIG = {
   projectId: "nmd-dispatch",
   storageBucket: "nmd-dispatch.firebasestorage.app",
   messagingSenderId: "368391007950",
-  appId: "1:368391007950:web:17bba0f2516266f5362a9f
+  appId: "1:368391007950:web:17bba0f2516266f5362a9f"
 };
