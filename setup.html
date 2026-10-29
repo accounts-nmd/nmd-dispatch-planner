@@ -8,7 +8,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="firebase-config.js"></script>
+<script>window.addEventListener("error",function(e){if(/firebase-config\.js/.test(e.filename||""))window.__nmdCfgError=e.message},true)</script>
+<script src="firebase-config.js" onerror="window.__nmdCfgMissing=true"></script>
 <script src="firebase-bridge.js"></script>
 <style>
   :root{--ink:#14202e;--mut:#5a6878;--line:#d8e0ea;--pri:#127a7a;--bg:#f2f5f8}
@@ -68,7 +69,7 @@
   let users=[{u:"admin",name:"Admin",role:"admin"},{u:"planner",name:"Dispatch Planner",role:"planner"},{u:"nmd",name:"NMD Viewer",role:"viewer"}];
   const esc=t=>String(t??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
   function draw(){
-    $("#ul").innerHTML=users.map((u,i)=>'<tr><td><input data-i="'+i+'" data-k="u" value="'+esc(u.u)+'"></td><td><input data-i="'+i+'" data-k="name" value="'+esc(u.name)+'"></td><td><select data-i="'+i+'" data-k="role">'+["admin","planner","viewer"].map(r=>'<option'+(u.role===r?" selected":"")+'>'+r+'</option>').join("")+'</select></td><td><input data-i="'+i+'" data-k="pw" type="text" value="'+esc(u.pw||"")+'" placeholder="min 4 characters"></td><td><button class="sec" data-del="'+i+'" type="button">✕</button></td></tr>').join("");
+    $("#ul").innerHTML=users.map((u,i)=>'<tr><td><input data-i="'+i+'" data-k="u" value="'+esc(u.u)+'"></td><td><input data-i="'+i+'" data-k="name" value="'+esc(u.name)+'"></td><td><select data-i="'+i+'" data-k="role">'+["admin","planner","viewer","dispatch"].map(r=>'<option'+(u.role===r?" selected":"")+'>'+r+'</option>').join("")+'</select></td><td><input data-i="'+i+'" data-k="pw" type="text" value="'+esc(u.pw||"")+'" placeholder="min 4 characters"></td><td><button class="sec" data-del="'+i+'" type="button">✕</button></td></tr>').join("");
   }
   draw();
   $("#ul").addEventListener("input",e=>{const t=e.target;if(t.dataset.i!=null)users[+t.dataset.i][t.dataset.k]=t.value});
