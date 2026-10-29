@@ -629,6 +629,8 @@ body.locked{background:#0A1830}
         <input type="file" id="stFile" accept=".xlsx,.xls,.csv" hidden>
         <button class="btn" id="stCopy" data-stk>Copy previous day</button>
         <button class="btn" id="stClr" data-stk>Clear this date</button>
+        <button class="btn" id="stMaster" data-admin title="Customer, FG Code, Item Description, Alt S/W Code">Upload item master</button>
+        <input type="file" id="stMFile" accept=".xlsx,.xls,.csv" hidden>
         <button class="btn" id="stXls">Export · Excel</button>
         <button class="btn" id="stPdf">Print · PDF</button>
         <button class="btn" id="stUse" data-plan title="Put this stock as item-wise qty to dispatch on the plan date">Use as qty to dispatch</button>
@@ -792,6 +794,7 @@ function applyRole(){
   if(S.tab==="pallet"||(S.tab==="users"&&!isAdmin())||(v&&(S.tab==="items"||S.tab==="pallet"||S.tab==="prio"||S.tab==="hist")))setTab("today");
   document.querySelectorAll("[data-plan]").forEach(b=>b.hidden=!canPlan());
   document.querySelectorAll("[data-stk]").forEach(b=>b.hidden=!canStock());
+  $("#stMaster").hidden=!isAdmin()||S.local;
   ["#btnOrdUpload","#btnQtyCopy","#btnQtyClear","#btnPalUp","#btnPoUp"].forEach(id=>{const e=$(id);if(e)e.hidden=!canPlan()});
   $("#fifoBasis").disabled=!isAdmin();
   ["#vName","#vPal","#btnAddVeh"].forEach(id=>{$(id).disabled=!isAdmin()});
@@ -1684,19 +1687,16 @@ function stockOf(item,d){const a=stockAsOf(d);return a?{qty:+(a.items[item]||0),
 function stPrevDate(d){return Object.keys(S.stockAll||{}).filter(x=>x<d&&Object.keys((S.stockAll[x].items)||{}).length).sort().pop()||""}
 function stockRows(){
   const D=S.stockDate,doc=stDoc(D),dr=S.stDraft[D],saved=(doc&&doc.items)||{},st=dr?dr.items:saved,meta={...((doc&&doc.meta)||{}),...((dr&&dr.meta)||{})},pd=stPrevDate(D),prev=pd?(S.stockAll[pd].items||{}):{};
-  const m={},owners={};
-  for(const r of ((S.orders&&S.orders.rows)||[])){const k=r.cust+"|"+r.item;const x=m[k]||(m[k]={cust:r.cust,item:r.item,desc:r.desc,alt:r.alt,uom:r.uom||"NOS",pend:0,lines:0,late:0,val:0,rate:r.rate,minReq:"9999"});
-    x.pend+=r.pend;x.lines++;x.val+=r.pend*r.rate;if(r.reqDate&&r.reqDate<D)x.late++;if(r.reqDate&&r.reqDate<x.minReq)x.minReq=r.reqDate;(owners[r.item]=owners[r.item]||new Set()).add(r.cust)}
+  const m={},add=(item,o)=>{item=String(item||"").trim().toUpperCase();if(!item)return null;const x=m[item]||(m[item]={item,cust:"",desc:"",alt:"",rate:0,uom:"NOS",inMaster:false,inSO:false});for(const k of["cust","desc","alt"])if(!x[k]&&o[k])x[k]=o[k];return x};
+  for(const r of ((S.itemMaster&&S.itemMaster.list)||[])){const x=add(r.item,r);if(x)x.inMaster=true}
+  for(const r of ((S.orders&&S.orders.rows)||[])){const x=add(r.item,r);if(x){x.inSO=true;if(!x.rate&&r.rate)x.rate=r.rate;if(r.uom)x.uom=r.uom}}
+  for(const it of Object.keys(st))add(it,meta[it]||{});
   const rows=Object.values(m);
-  for(const it of Object.keys(st))if(!owners[it]){const mt=meta[it]||{};rows.push({cust:mt.cust||"(other items)",item:it,desc:mt.desc||"",alt:mt.alt||"",uom:"NOS",pend:0,lines:0,late:0,val:0,rate:0,minReq:"9999",nopend:true})}
-  // an item ordered by several customers shares one stock figure: split it in order of earliest required date
-  const byItem={};for(const r of rows)(byItem[r.item]=byItem[r.item]||[]).push(r);
-  for(const[it,rs]of Object.entries(byItem)){let left=st[it]!=null?+st[it]:null;rs.sort((a,b)=>a.minReq.localeCompare(b.minReq));
-    for(const r of rs){r.stock=st[it]!=null?+st[it]:null;r.chg=(st[it]??null)!==(saved[it]??null);r.prev=prev[it]!=null?+prev[it]:null;r.shared=rs.length>1?rs.length:0;
-      if(left==null){r.alloc=0}else{r.alloc=r.nopend?left:Math.min(left,r.pend);left-=r.alloc}
-      r.status=r.nopend?"nopend":r.stock==null||r.stock===0?"nil":r.alloc>=r.pend?"cover":"short"}}
+  for(const r of rows){if(!r.cust)r.cust="(other items)";const k=r.item;r.stock=st[k]!=null?+st[k]:null;r.chg=(st[k]??null)!==(saved[k]??null);r.prev=prev[k]!=null?+prev[k]:null;r.nopend=r.cust==="(other items)"}
   return{rows,doc,pd}
 }
+function stockResolver(){const codes=new Set(),alt={};for(const r of ((S.itemMaster&&S.itemMaster.list)||[]).concat((S.orders&&S.orders.rows)||[])){const c=String(r.item||"").toUpperCase();codes.add(c);if(r.alt)alt[String(r.alt).trim().toUpperCase()]=c}
+  return(code,a)=>{code=String(code||"").trim().toUpperCase();a=String(a||"").trim().toUpperCase();if(codes.has(code))return code;return alt[code]||alt[a]||null}}
 function stFiltered(){const X=stockRows(),show=$("#stShow").value;
   const rows=X.rows.filter(r=>passF({...r,so:"",po:"",loc:""})&&(show==="all"||(show==="in"?r.stock>0:!(r.stock>0))));
   rows.sort((a,b)=>(!!a.nopend-!!b.nopend)||a.cust.localeCompare(b.cust)||a.item.localeCompare(b.item));return{...X,rows}}
@@ -1705,7 +1705,7 @@ function renderStock(){
   {const ch=stChanges(),pb=$("#stPend");pb.hidden=!ch.length||!canStock();$("#stSave").disabled=!ch.length;$("#stDiscard").hidden=!ch.length||!canStock();
    $("#stSave").textContent=ch.length?"Update stock ("+ch.length+")":"Update stock";
    if(ch.length)pb.innerHTML='<div class="grow"><b>'+ch.length+' change'+(ch.length>1?"s":"")+' not updated yet</b> — others still see the last updated stock.</div><button class="btn" type="button" onclick="document.getElementById(\'stDiscard\').click()">Discard</button><button class="btn pri" type="button" onclick="document.getElementById(\'stSave\').click()">Update stock ('+ch.length+')</button>'}
-  if(!S.orders&&!stDoc()){$("#stBody").innerHTML='<div class="empty">Upload the pending SO report first, then enter FG stock.</div>';$("#stSum").innerHTML="";$("#stInfo").textContent="";return}
+  if(!S.orders&&!stDoc()&&!(S.itemMaster&&S.itemMaster.list&&S.itemMaster.list.length)){$("#stBody").innerHTML='<div class="empty">Upload the item master or the pending SO report first, then enter FG stock.</div>';$("#stSum").innerHTML="";$("#stInfo").textContent="";return}
   const X=stFiltered(),ed=canStock(),doc=X.doc;
   $("#stInfo").innerHTML=doc&&doc.updatedAt?'Updated '+esc(dt(doc.updatedAt))+(doc.updatedBy?' by <b>'+esc(doc.updatedBy)+'</b>':""):'<span class="late">Not updated for '+fd(S.stockDate)+' yet</span>'+(X.pd?' · last stock '+fd(X.pd):"");
   const all=stockRows().rows,uniq={},codes=new Set();all.forEach(r=>{codes.add(r.item);if(r.stock>0)uniq[r.item]=r});
@@ -1747,23 +1747,23 @@ $("#stShow").addEventListener("input",()=>render());
 $("#stCopy").addEventListener("click",()=>{const pd=stPrevDate(S.stockDate);if(!pd){toast("No earlier stock to copy");return}
   stSetDraft({...(S.stockAll[pd].items||{})},{...(S.stockAll[pd].meta||{})});render();toast("Copied "+fd(pd)+" — check and press Update stock")});
 $("#stClr").addEventListener("click",()=>{if(!Object.keys(stEff()).length){toast("Nothing to clear");return}stSetDraft({});render();toast("Cleared on screen — press Update stock to save")});
-$("#stTpl").addEventListener("click",()=>{const X=stockRows();if(!X.rows.length){toast("Upload the pending SO report first");return}
-  const seen=new Set(),rows=[];X.rows.sort((a,b)=>a.cust.localeCompare(b.cust)||a.item.localeCompare(b.item)).forEach(r=>{rows.push({"Customer":r.cust,"Item Code":r.item,"Description":r.desc,"Alt Code":r.alt||"","FG Stock":seen.has(r.item)?"(same as above)":(r.stock??"")});seen.add(r.item)});
+$("#stTpl").addEventListener("click",()=>{const X=stockRows();if(!X.rows.length){toast("Upload the item master or pending SO report first");return}
+  const rows=X.rows.sort((a,b)=>(!!a.nopend-!!b.nopend)||a.cust.localeCompare(b.cust)||a.item.localeCompare(b.item)).map(r=>({"Customer":r.cust,"Item Code":r.item,"Description":r.desc,"Alt Code":r.alt||"","FG Stock":r.stock??""}));
   const wb=XLSX.utils.book_new(),ws=XLSX.utils.json_to_sheet(rows);ws["!cols"]=[32,12,40,14,12].map(w=>({wch:w}));XLSX.utils.book_append_sheet(wb,ws,"FG stock");
-  const h=XLSX.utils.aoa_to_sheet([["How to fill"],["Enter the FG stock (nos) in the 'FG Stock' column for each item. Blank = no change."],["An FG code used by two customers is listed twice; fill the first row only (stock is per FG code)."],["New FG codes not in the list can be added as new rows with Item Code and FG Stock."],["Upload with 'Upload stock sheet' on the FG stock tab. Stock date = the date selected there ("+fd(S.stockDate)+")."]]);h["!cols"]=[{wch:95}];XLSX.utils.book_append_sheet(wb,h,"How to fill");
+  const h=XLSX.utils.aoa_to_sheet([["How to fill"],["Enter the FG stock (nos) in the 'FG Stock' column for each item. Blank = no change."],["Each FG code is listed once (from the customer item code master)."],["New FG codes not in the list can be added as new rows with Item Code and FG Stock."],["Upload with 'Upload stock sheet' on the FG stock tab. Stock date = the date selected there ("+fd(S.stockDate)+")."]]);h["!cols"]=[{wch:95}];XLSX.utils.book_append_sheet(wb,h,"How to fill");
   saveFile("FG stock sheet "+fd(S.stockDate).replace(/\//g,"-")+".xlsx",wb)});
 $("#stUp").addEventListener("click",()=>$("#stFile").click());
 $("#stFile").addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
   try{const wb=await readBook(f);
     const T=findTable(wb,h=>{const ff=re=>h.findIndex(x=>re.test(x));const m={item:ff(/^itemcode$|^item$|^fgcode$|^code$|^itemno$/),alt:ff(/^altcode$|^alternate/),qty:ff(/^fgstock$|^stock$|^stockqty$|^closingstock$|^qty$|^availableqty$|^fgqty$/),desc:ff(/^description$|^itemdescription$/),cust:ff(/^customer$|^partyname$|^partydescription$/)};return(m.item>=0||m.alt>=0)&&m.qty>=0?m:null});
     if(!T){toast("Columns not found. Need Item Code and FG Stock.");return}
-    const res=itemResolver(),items={...stEff()},meta={};let ok=0,nw=0;
+    const res=stockResolver(),items={...stEff()},meta={},got=new Set();let ok=0,nw=0,dup=0;
     for(const r of T.rows){const raw=String(r[T.map.qty]??"").trim();if(raw===""||/same as above/i.test(raw))continue;const code0=String(T.map.item>=0?r[T.map.item]:"").trim();
       let code=res(code0,T.map.alt>=0?r[T.map.alt]:"");if(!code){if(!code0)continue;code=code0.toUpperCase();nw++;meta[code]={desc:T.map.desc>=0?String(r[T.map.desc]||""):"",cust:T.map.cust>=0?String(r[T.map.cust]||""):"",alt:T.map.alt>=0?String(r[T.map.alt]||""):""}}
-      items[code]=Math.max(0,Math.round(num(raw)));ok++}
+      if(got.has(code)){dup++;continue}got.add(code);items[code]=Math.max(0,Math.round(num(raw)));ok++}
     if(!ok){toast("No stock values found in that file");return}
     stSetDraft(items,meta);render();
-    toast(ok+" stock values loaded for "+fd(S.stockDate)+(nw?" · "+nw+" new FG codes":"")+" — check and press Update stock");
+    toast(ok+" stock values loaded for "+fd(S.stockDate)+(nw?" · "+nw+" new FG codes":"")+(dup?" · "+dup+" duplicate rows skipped":"")+" — check and press Update stock");
   }catch(err){console.error(err);toast("Couldn't read that file. Save it as .xlsx and try again.")}});
 $("#stXls").addEventListener("click",()=>{const X=stFiltered();if(!X.rows.length){toast("Nothing to export");return}
   const rows=X.rows.map(r=>({"Customer":r.cust,"Item Code":r.item,"Description":r.desc,"Alt Code":r.alt||"","FG stock":r.stock??"",["Prev. stock "+(X.pd?fd(X.pd):"")]:r.prev??"","Change":r.stock!=null&&r.prev!=null?r.stock-r.prev:""}));
@@ -1778,6 +1778,18 @@ $("#stPdf").addEventListener("click",()=>{const X=stFiltered();if(!X.rows.length
 $("#stUse").addEventListener("click",()=>{if(!canPlan())return;const doc=stDoc();if(!doc||!Object.keys(doc.items||{}).length){toast("No stock for "+fd(S.stockDate));return}
   const codes=new Set(((S.orders&&S.orders.rows)||[]).map(r=>r.item));const it={};for(const[k,v]of Object.entries(doc.items))if(codes.has(k)&&v>0)it[k]=v;
   twoClick($("#stUse"),"Click again: set qty to dispatch on "+fd(S.planDate),async()=>{S.qty={...S.qty,items:it,updatedAt:new Date().toISOString()};await saveQty();logAct("Qty","Qty from FG stock",S.planDate,"FG stock of "+fd(S.stockDate)+" · "+Object.keys(it).length+" items");render();toast(Object.keys(it).length+" items set as qty to dispatch on "+fd(S.planDate))})});
+$("#stMaster").addEventListener("click",()=>$("#stMFile").click());
+$("#stMFile").addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f||!isAdmin())return;
+  try{const wb=await readBook(f);
+    const T=findTable(wb,h=>{const ff=re=>h.findIndex(x=>re.test(x));const m={item:ff(/^fgcode$|^itemcode$|^item$|^code$/),cust:ff(/^customer$|^customername$|^partyname$|^partydescription$/),desc:ff(/^itemdescription$|^description$/),alt:ff(/^altswcode$|^altcode$|^alternate/)};return m.item>=0?m:null});
+    if(!T){toast("Columns not found. Need FG Code (and Customer, Item Description, Alt S/W Code).");return}
+    const g=(r,k)=>T.map[k]>=0?String(r[T.map[k]]??"").trim():"";const seen=new Set(),list=[];let dup=0;
+    for(const r of T.rows){const item=g(r,"item").toUpperCase();if(!item)continue;if(seen.has(item)){dup++;continue}seen.add(item);list.push({item,cust:g(r,"cust"),desc:g(r,"desc"),alt:g(r,"alt")})}
+    if(!list.length){toast("No FG codes found in that file");return}
+    const doc={list,fileName:f.name,updatedAt:new Date().toISOString(),updatedBy:whoNow().by};S.itemMaster=doc;await persist("app/items",doc,"admin");
+    logAct("Stock","Item master uploaded",S.stockDate,f.name+" · "+list.length+" FG codes"+(dup?" · "+dup+" duplicates removed":""));render();
+    toast(list.length+" FG codes loaded"+(dup?" · "+dup+" duplicate rows removed":""));
+  }catch(err){console.error(err);toast("Couldn't read that file. Save it as .xlsx and try again.")}});
 // ---------- PO-wise qty sheet ----------
 $("#btnPoTpl").addEventListener("click",()=>{if(!S.orders){toast("Upload a pending report first");return}
   const L=compute().lines.filter(l=>l.pend>0&&l.level!=="HOLD").sort((a,b)=>a.cust.localeCompare(b.cust)||a.item.localeCompare(b.item)||(a.ord||0)-(b.ord||0));
@@ -2135,6 +2147,7 @@ function attachData(db){
   db.doc("app/pallets").onSnapshot(s=>{S.pallets=s.exists?{...s.data(),items:{...(s.data().items||{})}}:{items:{}};const a=document.activeElement;if(a&&a.dataset&&a.dataset.pal!=null)return;render()},()=>{});
   db.collection("log").orderBy("at","desc").limit(1000).onSnapshot(s=>{S.log=s.docs.map(d=>({...d.data(),id:d.id}));if(S.tab==="hist")renderHistTab()},()=>{});
   db.collection("stock").orderBy("date","desc").limit(120).onSnapshot(sn=>{const m={};sn.docs.forEach(d=>m[d.id]=d.data());S.stockAll=m;const a=document.activeElement;if(a&&a.dataset&&a.dataset.stk!=null)return;if(S.tab==="stock"||S.tab==="items")render()},()=>{});
+  db.doc("app/items").onSnapshot(s=>{S.itemMaster=s.exists?s.data():null;if(S.tab==="stock")render()},()=>{});
   db.doc("app/disp").onSnapshot(s=>{S.dispMap=s.exists?{...(s.data().lines||{})}:{};render()},()=>{});
   db.doc("app/contacts").onSnapshot(s=>{S.contacts=s.exists?{list:(s.data().list||[]).map(c=>({...c}))}:{list:[]};if($("#shBox"))renderShareContacts()},()=>{});
   db.doc("app/vehicles").onSnapshot(s=>{S.vehicles=s.exists?{list:(s.data().list||[]).map(v=>({...v}))}:{list:[]};render()},()=>{});
