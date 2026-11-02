@@ -339,6 +339,26 @@ input.sd.other{border-color:var(--accent);background:var(--accent-soft);font-wei
 .pfsrc{display:grid;grid-template-columns:minmax(150px,1fr) minmax(140px,.8fr) minmax(0,2fr) minmax(0,1.4fr);gap:10px}
 @media (max-width:900px){.pfsrc{grid-template-columns:1fr 1fr}}
 @media (max-width:520px){.pfsrc{grid-template-columns:1fr}}
+.pfmail{margin-top:12px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:10px}
+@media (max-width:760px){.pfmail{grid-template-columns:1fr}}
+.mdrop{border:1.5px dashed var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;justify-content:center;background:var(--surface)}
+.mdrop.on{border-color:var(--accent,#0E7C86);background:#E9F7F8}
+.mdrop .mrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.mdrop .mname{font-weight:600;word-break:break-all}
+.msug{font-size:13px;line-height:1.45;border-radius:8px;padding:8px 10px;background:#FFF6E0;border:1px solid #F0D58C}
+.msug b{font-weight:700}.msug .why{color:var(--muted,#5B6B82);font-size:12px}
+.mst{display:inline-block;font-size:11.5px;font-weight:700;border-radius:999px;padding:2px 9px;white-space:nowrap}
+.mst.todo{background:#FDE7D5;color:#A1480B}.mst.pending{background:#FFF1C9;color:#8A6100}.mst.applied{background:var(--ok-soft);color:var(--ok)}.mst.kept{background:#E7EEF7;color:#2F4B73}.mst.info{background:#EEF1F4;color:#5B6B82}.mst.nopo{background:var(--bad-soft);color:var(--bad)}
+.rv{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.rv.conf{border-color:#E8A33D;background:#FFF8EA}
+.rv .rvh{display:flex;gap:10px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap}
+.rv .cmp{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center}
+.rv .cmp>div{background:var(--surface-2,#F1F5F9);border-radius:8px;padding:8px 10px;font-size:13px}
+.rv .arrow{font-size:20px;color:var(--muted,#5B6B82)}
+.mailbtn{font:inherit;font-size:12px;font-weight:600;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:3px 10px;cursor:pointer;white-space:nowrap}
+.mailbtn:hover{border-color:var(--accent,#0E7C86)}
+.mview img{max-width:100%;border:1px solid var(--line);border-radius:8px}
+.mview pre{white-space:pre-wrap;font:inherit;font-size:13px;background:var(--surface-2,#F1F5F9);border-radius:8px;padding:10px;margin:0;max-height:360px;overflow:auto}
 .pfsrc input,.pfsrc select{width:100%}
 .pflev{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;max-width:620px}
 .pflev button{font:inherit;font-size:12.5px;text-align:left;border:1.5px solid var(--line);background:var(--surface);color:var(--muted);border-radius:10px;padding:8px 12px;cursor:pointer;display:flex;flex-direction:column}
@@ -574,6 +594,7 @@ body.locked{background:#0A1830}
       <button role="tab" data-tab="items" aria-selected="false">Enter qty by item</button>
       <button role="tab" data-tab="pallet" aria-selected="false" hidden data-gone>Pallets &amp; vehicles<span class="n" id="nPal">0</span></button>
       <button role="tab" data-tab="prio" aria-selected="false">Customer priorities<span class="n" id="nPrio">0</span></button>
+      <button role="tab" data-tab="mail" aria-selected="false">Mail inbox<span class="n" id="nMail">0</span></button>
       <button role="tab" data-tab="stock" aria-selected="false">FG stock</button>
       <button role="tab" data-tab="orders" aria-selected="false">Pending SO</button>
       <button role="tab" data-tab="hist" aria-selected="false">History</button>
@@ -694,8 +715,12 @@ body.locked{background:#0A1830}
 
   <!-- PRIORITIES -->
   <section data-view="prio" class="view" hidden style="display:flex;flex-direction:column;gap:14px">
+    <div class="card" id="prApprove" hidden style="border-color:#E8A33D">
+      <div class="hd"><h3>Priorities pending approval</h3><span class="hint" id="prApCount"></span><span style="margin-left:auto;display:flex;gap:8px"><button class="btn sm pri" id="prApAll">Approve all</button><button class="btn sm" id="prRejAll">Reject all</button></span></div>
+      <div class="tw" id="prApBody"></div>
+    </div>
     <div class="card" id="prioAdd" data-plan>
-      <div class="hd"><h3>Add customer priority &amp; dispatch qty</h3><span class="hint">When a customer asks by Outlook mail, phone or WhatsApp</span></div>
+      <div class="hd"><h3>Add customer priority &amp; dispatch qty</h3><span class="hint">When a customer asks by Outlook mail, phone or WhatsApp</span><span style="margin-left:auto"><button class="btn sm pri" type="button" id="ndPick" title="Customer net demand Excel (e.g. Legrand / LK net demand) – creates priorities for approval">Upload net demand file</button><input type="file" id="ndFile" accept=".xlsx,.xls,.xlsm,.csv" hidden></span></div>
       <div class="bd pf2">
         <div class="pfstep">
           <div class="pfnum">1</div>
@@ -727,6 +752,14 @@ body.locked{background:#0A1830}
               <label class="f" for="pfRef">Reference (mail subject / who asked)<input id="pfRef" placeholder="e.g. RE: Urgent requirement – Mr. Patil"></label>
               <label class="f" for="pfNote">Note<input id="pfNote" placeholder="Optional"></label>
             </div>
+            <div class="pfmail">
+              <div class="mdrop" id="pfDrop">
+                <div class="hint" style="margin:0"><b>Mail copy</b> – attach the customer's mail: Outlook <b>.eml</b> (drag it from Outlook) or any file – PDF, Excel schedule, Word, screenshot (max 20 MB). An .eml fills reference, date, mail text and finds the PO; all its attachments are kept.</div>
+                <div class="mrow"><button type="button" class="btn sm" id="pfMailPick">Attach mail copy</button><input type="file" id="pfMailFile" hidden><span id="pfMailName" class="hint" style="margin:0">No file attached</span><button type="button" class="btn sm" id="pfMailDel" hidden>Remove</button></div>
+                <div id="pfMailSug" class="msug" hidden></div>
+              </div>
+              <label class="f" for="pfMailText">Or paste the mail text<textarea id="pfMailText" rows="3" placeholder="Copy the mail from Outlook (From, Date, Subject, message) and paste here"></textarea></label>
+            </div>
           </div>
         </div>
         <div class="pfgo"><span id="pfInfo"></span><span class="pfbtns"><button class="btn" id="pfClear" type="button">Clear form</button><button class="btn" id="pfRemove" type="button" hidden>Remove priority &amp; qty from these lines</button><button class="btn pri" id="pfAdd" type="button">Add priority &amp; dispatch qty</button></span></div>
@@ -739,6 +772,22 @@ body.locked{background:#0A1830}
   </section>
 
   <!-- ORDERS -->
+  <section data-view="mail" class="view" hidden style="display:flex;flex-direction:column;gap:14px">
+    <div class="card">
+      <div class="hd"><h3>Mail inbox</h3><span class="hint">Customer mails about POs · the app reads each mail, finds the PO, the priority asked and the dispatch date, and compares with the priority already set</span></div>
+      <div class="bd">
+        <div class="mdrop" id="mbDrop" style="padding:18px;align-items:flex-start">
+          <div><b>Drop customer mails here</b> – select one or many mails in Outlook and drag them onto this box (they come as .eml), or click the button.</div>
+          <div class="mrow"><button type="button" class="btn pri" id="mbPick">Add mails (.eml)</button><input type="file" id="mbFile" accept=".eml,message/rfc822" multiple hidden><span class="hint" id="mbInfo" style="margin:0"></span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="hd"><h3>All mails</h3><span class="hint" id="mbCount"></span>
+        <span style="margin-left:auto;display:flex;gap:8px;align-items:center"><label class="f" for="mbShow" style="margin:0">Show<select id="mbShow"><option value="all">All mails</option><option value="todo">Needs decision</option><option value="pending">Waiting approval</option><option value="applied">Priority set</option><option value="kept">Kept old priority</option><option value="info">No priority asked</option><option value="nopo">PO not found</option></select></label><input id="mbQ" type="search" placeholder="Search subject, PO, sender…" style="min-width:200px"><button type="button" class="btn sm" id="mbDelSel" hidden>Delete selected</button></span></div>
+      <div class="tw" id="mbBody"></div>
+    </div>
+  </section>
   <section data-view="stock" class="view" hidden style="display:flex;flex-direction:column;gap:14px">
     <div class="card">
       <div class="hd"><h3>FG stock</h3><span class="hint">Finished-goods stock, customer and item wise · updated daily by Dispatch</span></div>
@@ -916,8 +965,8 @@ function lock(on){document.body.classList.toggle("locked",on);$("#gate").hidden=
   if(!on){applyRole();render()}else{setTimeout(()=>{const t=S.loginUser?$("#gPass"):document.querySelector("#gUsers [data-guser]")||document.querySelector('#gRoles [aria-pressed="true"]');t&&t.focus()},50)}}
 function applyRole(){
   const v=isViewer();
-  document.querySelectorAll("nav.tabs [data-tab]").forEach(b=>{const t=b.dataset.tab;b.hidden=t==="pallet"||(t==="users"&&!isAdmin())||(v&&(t==="items"||t==="pallet"||t==="prio"||t==="hist"))});
-  if(S.tab==="pallet"||(S.tab==="users"&&!isAdmin())||(v&&(S.tab==="items"||S.tab==="pallet"||S.tab==="prio"||S.tab==="hist")))setTab("today");
+  document.querySelectorAll("nav.tabs [data-tab]").forEach(b=>{const t=b.dataset.tab;b.hidden=t==="pallet"||(t==="users"&&!isAdmin())||(v&&(t==="mail"||t==="items"||t==="pallet"||t==="prio"||t==="hist"))});
+  if(S.tab==="pallet"||(S.tab==="users"&&!isAdmin())||(v&&(S.tab==="mail"||S.tab==="items"||S.tab==="pallet"||S.tab==="prio"||S.tab==="hist")))setTab("today");
   document.querySelectorAll("[data-plan]").forEach(b=>b.hidden=!canPlan());
   document.querySelectorAll("[data-stk]").forEach(b=>b.hidden=!canStock());
   $("#stMaster").hidden=!isAdmin()||S.local;
@@ -963,6 +1012,27 @@ function removeDoc(path){
 }
 function deletePlan(date){const p=S.plans.find(x=>x.date===date);if(p&&pStatus(p)==="approved"&&!isAdmin()){toast("Approved plan — only Admin can delete it");return}return setPlanStatus(date,"deleted","")}
 const savePrio=()=>persist("app/prio",S.prio);
+// ---- priority approval: a new or changed priority waits in .req until approved ----
+const PFIELDS=["level","src","recv","ref","note","qty","disp","mail"];
+function prioBase(e){const b={...(e||{})};delete b.req;return b}
+function samePrio(a,b){return PFIELDS.every(f=>(a[f]??"")===(b[f]??""))}
+function demandOf(key){const e=S.prio.lines[key];if(!e)return null;if(e.req&&e.req.askQty!=null)return{q:+e.req.askQty,pending:true,src:e.req.src};if(e.askQty!=null)return{q:+e.askQty,pending:false,src:e.src};return null}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-usedem]");if(!b||!canPlan())return;const i=document.querySelector('[data-man="'+CSS.escape(b.dataset.usedem)+'"]');if(!i)return;i.value=b.dataset.q;i.dispatchEvent(new Event("change",{bubbles:true}))});
+function requestPrio(key,ne,why){const cur=S.prio.lines[key];const base=prioBase(cur);const w=whoNow(),at=new Date().toISOString();
+  const has=Object.keys(base).some(k=>PFIELDS.includes(k)&&base[k]!=null&&base[k]!=="");
+  if(ne){const v={};PFIELDS.forEach(f=>{if(ne[f]!=null&&ne[f]!=="")v[f]=ne[f]});if(has&&samePrio(base,v)){if(cur&&cur.req){S.prio.lines[key]=base}return false}
+    S.prio.lines[key]={...base,req:{...v,by:w.by||"",at,why:why||""}};return true}
+  if(!has){if(cur)delete S.prio.lines[key];return false}
+  S.prio.lines[key]={...base,req:{remove:true,by:w.by||"",at,why:why||""}};return true}
+function prioPending(){return Object.entries(S.prio.lines).filter(([k,e])=>e&&e.req)}
+async function decidePrio(keys,ok){if(!canPlan())return;const w=whoNow(),at=new Date().toISOString();const mails={};let nOk=0;
+  for(const k of keys){const e=S.prio.lines[k];if(!e||!e.req)continue;const r=e.req,base=prioBase(e);if(r.mail)mails[r.mail]=1;
+    if(!ok){if(Object.keys(base).length)S.prio.lines[k]=base;else delete S.prio.lines[k];logAct("Priority","Priority rejected",r.disp||base.disp||S.planDate,lineRef(k)+" · "+(r.remove?"remove":(PRIO_LABEL[r.level]||"Normal"))+" requested by "+(r.by||"—"));continue}
+    if(r.remove){delete S.prio.lines[k]}
+    else{const v={};PFIELDS.forEach(f=>{if(r[f]!=null&&r[f]!=="")v[f]=r[f]});const ne={...v,reqBy:r.by||"",apBy:w.by||"",apAt:at};if(base.level&&base.level!==v.level)ne.prev={level:base.level,recv:base.recv||"",ref:base.ref||""};if(base.mail&&!ne.mail)ne.mail=base.mail;if(r.askQty!=null)ne.askQty=r.askQty;else if(base.askQty!=null)ne.askQty=base.askQty;S.prio.lines[k]=ne}
+    nOk++;logAct("Priority","Priority approved",r.disp||S.planDate,lineRef(k)+" · "+(r.remove?"removed":(base.level||"Normal")+" → "+(PRIO_LABEL[r.level]||"Normal"))+" · requested by "+(r.by||"—"))}
+  savePrio();for(const id of Object.keys(mails)){const m=(S.mails||[]).find(x=>x.id===id);if(m&&m.status==="pending")await markMail(m,ok?"applied":"kept",ok?"Mail priority approved":"Mail priority rejected")}
+  render();toast(keys.length+" priorit"+(keys.length>1?"ies":"y")+(ok?" approved — check the Dispatch tab and Save plan":" rejected"))}
 const saveSettings=()=>persist("app/settings",S.settings,"admin");
 const saveQty=()=>{markDirty(S.planDate);return persist("qty/"+S.planDate,{...S.qty,date:S.planDate})};
 const savePallets=()=>persist("app/pallets",S.pallets);
@@ -1035,9 +1105,11 @@ function render(){
   if(S.tab==="prio")renderPrio(R);
   if(S.tab==="orders")renderOrders(R);
   if(S.tab==="stock")renderStock();
+  if(S.tab==="mail")renderMailbox(R);
+  {const nm=$("#nMail");if(nm){const k=(S.mails||[]).filter(m=>m.status==="todo").length;nm.textContent=k;nm.classList.toggle("bad",k>0)}}
   if(S.tab==="users")renderUsers();
   if(S.tab==="hist")renderHistTab();
-  $("#nPrio").textContent=Object.values(S.prio.lines).filter(p=>p.level).length;
+  {const np=prioPending().length;$("#nPrio").textContent=Object.values(S.prio.lines).filter(p=>p.level).length+(np?" · "+np+" pending":"");$("#nPrio").classList.toggle("bad",np>0)}
   const noPs=Object.values(R.items).filter(i=>!i.ps).length;
   $("#nPal").textContent=noPs?noPs+" missing":"✓";$("#nPal").classList.toggle("bad",noPs>0);
 }
@@ -1097,6 +1169,7 @@ function renderToday(R){
   const A=[];
   if(!pl.length&&fActive())A.push('<div><b>No planned lines match the filters.</b> <button class="btn sm" id="fClear2">Clear filters</button></div>');
   else if(!pl.length)A.push('<div><b>Nothing to dispatch yet.</b> Enter the quantity you can send for each item. <button class="btn sm" data-goto="items">Enter qty by item</button></div>');
+  {const np=prioPending().length;if(np&&canPlan())A.push('<div><b>'+np+' priorit'+(np>1?"ies":"y")+' waiting for approval</b> — not used in the plan yet. <button class="btn sm" data-goto="prio">Review &amp; approve</button></div>')}
   if(pr.length)A.push('<div><b>'+pr.length+' customer-priority PO'+(pr.length>1?"s":"")+'</b> not fully covered'+(noQty.length?' ('+noQty.length+' item'+(noQty.length>1?"s have":" has")+' no qty entered)':"")+'. <button class="btn sm" data-goto="prio">See priorities</button></div>');
   if(late.length)A.push('<div><b>'+late.length+' overdue PO lines</b> ('+n(late.reduce((s,l)=>s+l.bal,0))+' nos) stay pending after this dispatch — listed at the bottom.</div>');
   if(!isViewer())$("#attn").innerHTML=A.length?'<div class="attn">'+A.join("")+'</div>':"";
@@ -1368,23 +1441,25 @@ function renderSheet(R){
   $("#sheet").innerHTML=
     '<div class="hd"><h3>'+esc(it.item)+' · '+esc(it.desc)+'</h3></div>'+
     '<div class="bd"><dl class="meta"><dt>Customer</dt><dd>'+esc(it.cust)+'</dd><dt>Product</dt><dd>'+esc(it.desc)+'</dd><dt>Item no.</dt><dd class="code">'+esc(it.item)+'</dd><dt>Alternative code</dt><dd class="code">'+esc(it.alt||"—")+'</dd>'+(()=>{const so=stockOf(it.item);if(!so)return'<dt>FG stock</dt><dd class="muted">Not updated yet</dd>';const bal=so.qty-it.plan;return'<dt>FG stock</dt><dd><strong class="'+(so.qty>0?"stk-ok":"stk-nil")+'">'+n(so.qty)+' '+esc(it.uom)+'</strong> <span class="muted">as on '+fd(so.date)+(so.date!==S.planDate?" (latest update)":"")+'</span>'+(it.plan?' · planned <strong>'+n(it.plan)+'</strong> · '+(bal<0?'<span class="late">'+n(-bal)+' more than stock</span>':'<span style="color:var(--ok)">'+n(bal)+' left after plan</span>'):"")+'</dd>'})()+'</dl></div>'+
-    '<div class="tw"><table><thead><tr><th class="n">#</th><th>Priority</th><th>Customer PO</th><th>PO date</th><th>Ship to</th><th>Required</th><th class="n">Pending</th><th>Dispatch on</th><th class="n">Dispatch qty</th><th class="n">Balance</th></tr></thead><tbody>'+
+    '<div class="tw"><table><thead><tr><th class="n">#</th><th>Priority</th><th>Customer PO</th><th>PO date</th><th>Ship to</th><th>Required</th><th class="n">Pending</th><th class="n" title="Qty the customer asked for (net demand file / mail)">Customer demand</th><th>Dispatch on</th><th class="n">Dispatch qty</th><th class="n">Balance</th></tr></thead><tbody>'+
     ls.map(l=>'<tr class="click'+(l.plan>0?"":" dim")+'" data-key="'+esc(l.key)+'" tabindex="0"><td class="n muted">'+l.ord+'</td>'+
       '<td><select class="ps" data-ps="'+esc(l.key)+'" aria-label="Priority for PO '+esc(poShow(l.po))+'"'+ro+'>'+["","P1","P2","HOLD"].map(v=>'<option value="'+v+'"'+(l.level===v?" selected":"")+'>'+(v?PRIO_LABEL[v]:"Normal")+'</option>').join("")+'</select>'+(l.p&&l.p.src?'<span class="sub">'+esc(l.p.src)+'</span>':"")+'</td>'+
       '<td class="code">'+esc(poShow(l.po))+'<span class="sub">'+esc(l.so.replace(/^SO\/65\/2627\//,"SO "))+'</span></td>'+
       '<td class="n">'+fd(l.poDate)+'</td><td>'+esc(l.loc)+'</td>'+
       '<td class="n'+(l.late?" late":"")+'">'+fd(l.reqDate)+'</td>'+
       '<td class="n">'+n(l.pend)+'</td>'+
+      (()=>{const dm=demandOf(l.key);if(!dm)return'<td class="n muted">—</td>';const q=Math.min(dm.q,l.pend);
+        return'<td class="n">'+(canPlan()?'<button type="button" class="linkbtn" data-usedem="'+esc(l.key)+'" data-q="'+q+'" title="Put this qty in Dispatch qty"><b>'+n(dm.q)+'</b></button>':'<b>'+n(dm.q)+'</b>')+'<span class="sub">'+(dm.pending?"waiting approval":esc(dm.src||"customer"))+'</span></td>'})()+
       (()=>{const rd=rowDate(l);if(rd!==S.planDate)loadQtyDoc(rd);return canPlan()?'<td><input type="date" class="sd'+(rd!==S.planDate?" other":"")+'" data-sdate="'+esc(l.key)+'" min="'+S.planDate+'" value="'+rd+'" aria-label="Dispatch date for PO '+esc(poShow(l.po))+'">'+(rd!==S.planDate?'<span class="sub">later date</span>':"")+'</td>':'<td>'+fd(rd)+'</td>'})()+
       (canPlan()&&rowDate(l)!==S.planDate?'<td class="n"><input class="num mq on" type="number" min="0" max="'+l.pend+'" step="1" inputmode="numeric" data-man="'+esc(l.key)+'" data-mdate="'+rowDate(l)+'" value="'+(rowQty(l)??"")+'" placeholder="qty" aria-label="Dispatch qty for PO '+esc(poShow(l.po))+' on '+fd(rowDate(l))+'"><span class="sub">for '+fd(rowDate(l)).slice(0,5)+'</span></td>':
       canPlan()?'<td class="n"><input class="num mq'+(l.manual?" on":"")+'" type="number" min="0" max="'+l.pend+'" step="1" inputmode="numeric" data-man="'+esc(l.key)+'" value="'+(l.plan||"")+'" placeholder="0" aria-label="Dispatch qty for PO '+esc(poShow(l.po))+'">'+(l.manual?'<span class="sub"><button type="button" class="linkbtn" data-unman="'+esc(l.key)+'">manual · reset</button></span>':'<span class="sub">auto</span>')+'</td>'
       :'<td class="n"><strong>'+(l.plan?n(l.plan):"—")+'</strong></td>')+
       '<td class="n">'+(l.bal?n(l.bal):"—")+'</td></tr>').join("")+
-    '</tbody><tfoot><tr><td colspan="6">Total · '+ls.length+' PO</td><td></td><td class="n">'+n(tot.pend)+'</td><td class="n">'+n(tot.plan)+'</td><td class="n">'+n(tot.bal)+'</td></tr></tfoot></table></div>'+
+    '</tbody><tfoot><tr><td colspan="6">Total · '+ls.length+' PO</td><td class="n">'+n(tot.pend)+'</td><td class="n">'+(()=>{const t=ls.reduce((a,l)=>{const d=demandOf(l.key);return a+(d?d.q:0)},0);return t?n(t):""})()+'</td><td></td><td class="n">'+n(tot.plan)+'</td><td class="n">'+n(tot.bal)+'</td></tr></tfoot></table></div>'+
     '<div class="dq">'+
       '<label for="dqIn">Qty to dispatch<input id="dqIn" type="number" min="0" step="1" inputmode="numeric" value="'+(it.given!=null?it.given:"")+'" placeholder="0"'+ro+'></label>'+
       (ps?'<label for="dqPal">or pallets<input id="dqPal" type="number" min="0" step="1" inputmode="numeric" value="'+(it.given!=null?Math.floor(it.given/ps):"")+'" placeholder="0"'+ro+'></label>':"")+
-      '<div class="toolbar">'+(()=>{const so=stockOf(it.item);return so?'<button class="btn sm" id="dqStk"'+ro+'>= FG stock ('+n(so.qty)+')</button>':""})()+'<button class="btn sm" id="dqAll"'+ro+'>= All pending ('+n(it.pend)+')</button><button class="btn sm" id="dqClr"'+ro+'>Clear</button></div>'+
+      '<div class="toolbar">'+(()=>{const so=stockOf(it.item);return so?'<button class="btn sm" id="dqStk"'+ro+'>= FG stock ('+n(so.qty)+')</button>':""})()+''+(()=>{const t=ls.reduce((a,l)=>{const d=demandOf(l.key);return a+(d?Math.min(d.q,l.pend):0)},0);return t?'<button class="btn sm" id="dqDem"'+ro+' title="Put each PO\'s customer demand qty in Dispatch qty">= Customer demand ('+n(t)+')</button>':""})()+'<button class="btn sm" id="dqAll"'+ro+'>= All pending ('+n(it.pend)+')</button><button class="btn sm" id="dqClr"'+ro+'>Clear</button></div>'+
       '<div class="msg">'+msg+'<div class="hint">Enter saves and moves to the next item.</div></div></div>';
 }
 function setQty(item,val){
@@ -1508,10 +1583,21 @@ function renderPrioForm(R){
 }
 function renderPrio(R){
   renderPrioForm(R);
+  {const P=prioPending(),box=$("#prApprove");box.hidden=!P.length;
+   if(P.length){const by={};R.lines.forEach(l=>by[l.key]=l);$("#prApCount").textContent=P.length+" line"+(P.length>1?"s":"")+" · not used in the plan until approved · after approving, check the Dispatch tab and Save plan";
+    ["#prApAll","#prRejAll"].forEach(i=>$(i).hidden=!canPlan());
+    $("#prApBody").innerHTML='<table><thead><tr><th>Customer · PO</th><th>Item</th><th>Now</th><th>Requested</th><th>Source / reference</th><th>Requested by</th><th></th></tr></thead><tbody>'+
+     P.sort((a,b)=>(b[1].req.at||"").localeCompare(a[1].req.at||"")).map(([k,e])=>{const l=by[k],r=e.req;const ln=l||{cust:"",po:k.split("|")[1]||"",item:k.split("|")[2]||"",desc:""};
+      return'<tr><td style="min-width:150px">'+esc(short(ln.cust))+'<span class="sub code">PO '+esc(poShow(ln.po))+'</span></td><td style="min-width:160px"><span class="code">'+esc(ln.item)+'</span> '+esc(ln.desc||"")+(l?'<span class="sub">pending '+n(l.pend)+' · req '+fd(l.reqDate)+'</span>':'<span class="sub late">not in pending SO</span>')+'</td>'+
+      '<td>'+(e.level?'<b>'+esc(PRIO_LABEL[e.level])+'</b>':"Normal")+(e.disp?'<span class="sub">dispatch '+fd(e.disp)+'</span>':"")+'</td>'+
+      '<td>'+(r.remove?'<b class="late">Remove priority</b>':'<b>'+esc(PRIO_LABEL[r.level]||"Normal")+'</b>'+(r.disp?'<span class="sub">dispatch '+fd(r.disp)+'</span>':"")+(r.askQty!=null?'<span class="sub">mail asks '+n(r.askQty)+' nos</span>':""))+(r.why==="Auto from mail"?'<span class="sub">auto from mail</span>':"")+'</td>'+
+      '<td style="min-width:150px">'+esc(r.src||"")+(r.ref?'<span class="sub">'+esc(r.ref)+'</span>':"")+(r.mail?' <button type="button" class="mailbtn" data-mail="'+esc(r.mail)+'">📎 Mail</button>':"")+'</td>'+
+      '<td>'+esc(r.by||"—")+'<span class="sub">'+esc(dt(r.at))+'</span></td>'+
+      '<td style="white-space:nowrap">'+(canPlan()?'<button class="btn sm pri" data-prok="'+esc(k)+'">Approve</button> <button class="btn sm" data-prno="'+esc(k)+'">Reject</button>':"")+'</td></tr>'}).join("")+'</tbody></table>'}}
   const ls=R.lines.filter(l=>l.p&&passF(l)).sort((a,b)=>rank(a.level)-rank(b.level)||(b.p.recv||"").localeCompare(a.p.recv||""));
   const live=new Set(R.lines.map(l=>l.key)),stale=Object.keys(S.prio.lines).filter(k=>!live.has(k));
-  $("#prioBody").innerHTML=(ls.length?'<table><thead><tr><th>Priority</th><th>Received via</th><th>On</th><th>Reference / who</th><th>To dispatch on</th><th>Customer · PO</th><th>Item</th><th>Ship to</th><th>Required</th><th class="n">Pending</th><th class="n">Dispatch '+fd(S.planDate).slice(0,5)+'</th><th>Note</th><th></th></tr></thead><tbody>'+
-    ls.map(l=>'<tr class="click" data-key="'+esc(l.key)+'" tabindex="0"><td>'+prioChip(l)+'</td><td>'+esc(l.p.src||"—")+'</td><td class="n">'+fd(l.p.recv)+'</td><td style="min-width:150px">'+esc(l.p.ref||"—")+'</td><td class="n">'+(l.p.disp?'<span class="'+(l.p.disp<todayISO()&&l.bal>0?"late":"")+'">'+fd(l.p.disp)+'</span>':"—")+'</td><td style="min-width:150px">'+esc(short(l.cust))+'<span class="sub code">PO '+esc(poShow(l.po))+'</span></td><td style="min-width:190px"><span class="code">'+esc(l.item)+'</span> '+esc(l.desc)+'</td><td>'+esc(l.loc)+'</td><td class="n'+(l.late?" late":"")+'">'+fd(l.reqDate)+'</td><td class="n">'+n(l.pend)+'</td><td class="n">'+(l.plan?n(l.plan):'<span class="pill p-none">0</span>')+'</td><td style="min-width:120px">'+esc(l.p.note||"")+'</td><td>'+(canPlan()?'<button class="btn sm" data-prdel="'+esc(l.key)+'">Remove</button>':"")+'</td></tr>').join("")+'</tbody></table>'
+  $("#prioBody").innerHTML=(ls.length?'<table><thead><tr><th>Priority</th><th>Received via</th><th>On</th><th>Reference / who</th><th>Mail</th><th>To dispatch on</th><th>Customer · PO</th><th>Item</th><th>Ship to</th><th>Required</th><th class="n">Pending</th><th class="n">Dispatch '+fd(S.planDate).slice(0,5)+'</th><th>Note</th><th></th></tr></thead><tbody>'+
+    ls.map(l=>'<tr class="click" data-key="'+esc(l.key)+'" tabindex="0"><td>'+prioChip(l)+'</td><td>'+esc(l.p.src||"—")+'</td><td class="n">'+fd(l.p.recv)+'</td><td style="min-width:150px">'+esc(l.p.ref||"—")+'</td><td>'+(l.p.mail?'<button type="button" class="mailbtn" data-mail="'+esc(l.p.mail)+'">📎 View</button>':'<span class="muted">—</span>')+'</td><td class="n">'+(l.p.disp?'<span class="'+(l.p.disp<todayISO()&&l.bal>0?"late":"")+'">'+fd(l.p.disp)+'</span>':"—")+'</td><td style="min-width:150px">'+esc(short(l.cust))+'<span class="sub code">PO '+esc(poShow(l.po))+'</span></td><td style="min-width:190px"><span class="code">'+esc(l.item)+'</span> '+esc(l.desc)+'</td><td>'+esc(l.loc)+'</td><td class="n'+(l.late?" late":"")+'">'+fd(l.reqDate)+'</td><td class="n">'+n(l.pend)+'</td><td class="n">'+(l.plan?n(l.plan):'<span class="pill p-none">0</span>')+'</td><td style="min-width:120px">'+esc(l.p.note||"")+'</td><td>'+(canPlan()?'<button class="btn sm" data-prdel="'+esc(l.key)+'">Remove</button>':"")+'</td></tr>').join("")+'</tbody></table>'
     :'<div class="empty">No customer priorities yet. Add one above when a customer asks by mail or on a call.</div>')+
     (stale.length?'<div class="bd hint">'+stale.length+' entr'+(stale.length>1?"ies are":"y is")+' for POs no longer pending. <button class="btn sm" id="btnPrune">Remove</button></div>':"");
 }
@@ -1524,13 +1610,16 @@ function renderOrders(R){
     ls.map(l=>'<tr class="click" data-key="'+esc(l.key)+'" tabindex="0"><td>'+esc(short(l.cust))+'</td><td>'+esc(l.loc)+'</td><td class="code">'+esc(poShow(l.po))+'</td><td class="n">'+fd(l.poDate)+'</td><td class="code">'+esc(l.so)+'</td><td style="min-width:200px"><span class="code">'+esc(l.item)+'</span> '+esc(l.desc)+'</td><td class="n">'+n(l.rate)+'</td><td class="n'+(l.late?" late":"")+'">'+fd(l.reqDate)+'</td><td class="n">'+n(l.soQty)+'</td><td class="n">'+n(l.pend)+'</td></tr>').join("")+'</tbody></table>';
 }
 
+document.addEventListener("click",e=>{const a=e.target.closest("[data-prok]"),r=e.target.closest("[data-prno]");if(a){decidePrio([a.dataset.prok],true);return}if(r){decidePrio([r.dataset.prno],false);return}
+  if(e.target.id==="prApAll"){const ks=prioPending().map(x=>x[0]);twoClick(e.target,"",()=>decidePrio(ks,true));return}
+  if(e.target.id==="prRejAll"){const ks=prioPending().map(x=>x[0]);twoClick(e.target,"",()=>decidePrio(ks,false))}});
 // ---------- drawer ----------
 function openLine(key){
   const R=compute();const l=R.lines.find(x=>x.key===key);if(!l)return;
   const p=S.prio.lines[key]||{};const ro=roP();
   $("#drawerRoot").innerHTML='<div class="scrim" data-close></div><aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="dTitle">'+
    '<div class="dh"><div style="flex:1;min-width:0"><h3 id="dTitle">PO '+esc(poShow(l.po))+' · '+esc(l.item)+'</h3><div class="hint">'+esc(l.desc)+'</div></div><button class="btn sm" data-close>Close</button></div>'+
-   '<div class="db"><dl class="meta"><dt>Customer</dt><dd>'+esc(l.cust)+'</dd><dt>Ship to</dt><dd>'+esc(l.loc)+'</dd><dt>Sales order</dt><dd>'+esc(l.so)+'</dd><dt>PO date</dt><dd>'+fd(l.poDate)+'</dd><dt>Required</dt><dd'+(l.late?' class="late"':"")+'>'+fd(l.reqDate)+(l.late?" (overdue)":"")+'</dd><dt>Pending</dt><dd>'+n(l.pend)+' of '+n(l.soQty)+' '+esc(l.uom)+'</dd><dt>Dispatch '+fd(S.planDate)+'</dt><dd>'+n(l.plan)+' '+(l.ps?"("+palPlain(l)+")":"")+' '+statusPill(l)+'</dd></dl>'+
+   '<div class="db">'+(p.req?'<div class="attn"><div><b>Pending approval:</b> '+(p.req.remove?"remove priority":esc(PRIO_LABEL[p.req.level]||"Normal")+(p.req.disp?" · dispatch "+fd(p.req.disp):""))+' — requested by '+esc(p.req.by||"—")+' · '+esc(dt(p.req.at))+(canPlan()?' <button class="btn sm pri" data-prok="'+esc(key)+'">Approve</button> <button class="btn sm" data-prno="'+esc(key)+'">Reject</button>':"")+'</div></div>':"")+'<dl class="meta"><dt>Customer</dt><dd>'+esc(l.cust)+'</dd><dt>Ship to</dt><dd>'+esc(l.loc)+'</dd><dt>Sales order</dt><dd>'+esc(l.so)+'</dd><dt>PO date</dt><dd>'+fd(l.poDate)+'</dd><dt>Required</dt><dd'+(l.late?' class="late"':"")+'>'+fd(l.reqDate)+(l.late?" (overdue)":"")+'</dd><dt>Pending</dt><dd>'+n(l.pend)+' of '+n(l.soQty)+' '+esc(l.uom)+'</dd><dt>Dispatch '+fd(S.planDate)+'</dt><dd>'+n(l.plan)+' '+(l.ps?"("+palPlain(l)+")":"")+' '+statusPill(l)+'</dd></dl>'+
     '<div><div class="hint" style="margin-bottom:6px">Customer priority</div><div class="seg" id="dLevel">'+["","P1","P2","HOLD"].map(v=>'<button type="button" data-lv="'+v+'" aria-pressed="'+((p.level||"")===v)+'"'+ro+'>'+(v?PRIO_LABEL[v]:"Normal")+'</button>').join("")+'</div></div>'+
     '<div class="grid2"><label class="f" for="dSrc">Received via<select id="dSrc"'+ro+'><option value="">—</option>'+SRC.map(s=>'<option'+(p.src===s?" selected":"")+'>'+s+'</option>').join("")+'</select></label>'+
     '<label class="f" for="dRecv">Received on<input type="date" id="dRecv" value="'+esc(p.recv||"")+'"'+ro+'></label></div>'+
@@ -1538,18 +1627,19 @@ function openLine(key){
     '<label class="f" for="dRef">Reference (mail subject / who called)<input id="dRef" value="'+esc(p.ref||"")+'" placeholder="e.g. Purchase team, Novateur Bhiwandi — call 27/10"'+ro+'></label>'+
     '<label class="f" for="dQty">Dispatch at most (qty cap)<input type="number" min="0" id="dQty" value="'+esc(p.qty??"")+'" placeholder="Full pending"'+ro+'></label>'+
     '<label class="f" for="dNote">Note<textarea id="dNote" rows="2"'+ro+'>'+esc(p.note||"")+'</textarea></label>'+
+    (p.mail?'<div><div class="hint" style="margin-bottom:6px">Mail copy</div><button type="button" class="mailbtn" data-mail="'+esc(p.mail)+'">📎 View mail copy</button></div>':"")+
    '</div><div class="df"><button class="btn pri" id="dSave"'+ro+'>Save</button>'+(S.prio.lines[key]?'<button class="btn" id="dClear"'+ro+'>Clear priority</button>':"")+'<button class="btn" data-close>Cancel</button></div></aside>';
   let level=p.level||"";
   $("#dLevel").addEventListener("click",e=>{const b=e.target.closest("[data-lv]");if(!b)return;level=b.dataset.lv;$("#dLevel").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));if(level&&!$("#dRecv").value)$("#dRecv").value=todayISO()});
   $("#dSave").addEventListener("click",()=>{
     const qty=$("#dQty").value===""?null:Math.max(0,+$("#dQty").value||0);
-    const e={level,src:$("#dSrc").value,recv:$("#dRecv").value,ref:$("#dRef").value.trim(),note:$("#dNote").value.trim(),qty,disp:$("#dDisp").value};
-    const had=S.prio.lines[key];
-    if(!level&&!e.src&&!e.ref&&!e.note&&qty==null)delete S.prio.lines[key];else S.prio.lines[key]=e;
-    logAct("Priority",!S.prio.lines[key]?"Priority removed":had?"Priority changed":"Priority added",e.disp||S.planDate,lineRef(key)+" · "+(level||"Normal")+(e.src?" · "+e.src:"")+(e.ref?" · "+e.ref:""));
-    savePrio();closeDrawer();render();toast("Saved");
+    const e={level,src:$("#dSrc").value,recv:$("#dRecv").value,ref:$("#dRef").value.trim(),note:$("#dNote").value.trim(),qty,disp:$("#dDisp").value};if(p.mail)e.mail=p.mail;
+    const empty=!level&&!e.src&&!e.ref&&!e.note&&qty==null;
+    const sent=requestPrio(key,empty?null:e,"Line edit");
+    if(sent)logAct("Priority","Priority requested",e.disp||S.planDate,lineRef(key)+" · "+(empty?"remove":(level||"Normal"))+(e.src?" · "+e.src:"")+(e.ref?" · "+e.ref:""));
+    savePrio();closeDrawer();render();toast(sent?"Sent for approval":"No change");
   });
-  $("#dClear")&&$("#dClear").addEventListener("click",()=>{logAct("Priority","Priority removed",(S.prio.lines[key]||{}).disp||S.planDate,lineRef(key));delete S.prio.lines[key];savePrio();closeDrawer();render();toast("Priority cleared")});
+  $("#dClear")&&$("#dClear").addEventListener("click",()=>{const sent=requestPrio(key,null,"Line edit");if(sent)logAct("Priority","Priority removal requested",(S.prio.lines[key]||{}).disp||S.planDate,lineRef(key));savePrio();closeDrawer();render();toast(sent?"Removal sent for approval":"Cleared")});
   $("#drawerRoot").querySelectorAll("[data-close]").forEach(x=>x.addEventListener("click",closeDrawer));
 }
 function closeDrawer(){$("#drawerRoot").innerHTML=""}
@@ -1762,15 +1852,17 @@ function handleBtn(e){
   const vd=t.closest("[data-vdel]");if(vd){S.vehicles={list:(S.vehicles.list||[]).filter(v=>v.name!==vd.dataset.vdel)};saveVehicles();render();return}
   if(t.id==="btnPrune"){const live=new Set(compute().lines.map(l=>l.key));for(const k of Object.keys(S.prio.lines))if(!live.has(k))delete S.prio.lines[k];savePrio();render();return}
   if(t.id==="dqStk"){const so=stockOf(S.sel);if(so){setQty(S.sel,so.qty);render()}return}
+  if(t.id==="dqDem"){const L=compute().lines.filter(l=>l.item===S.sel);L.forEach(l=>{const d=demandOf(l.key);if(!d)return;const q=Math.min(d.q,l.pend),rd=rowDate(l);if(rd!==S.planDate)setManualAt(l.key,String(q),rd);else setManual(l.key,String(q))});render();toast("Customer demand qty put in Dispatch qty");return}
   if(t.id==="dqAll"){const it=compute().items[S.sel];if(it){setQty(S.sel,it.pend);render()}return}
   if(t.id==="dqClr"){setQty(S.sel,"");render();return}
   const um=t.closest("[data-unman]");if(um){setManual(um.dataset.unman,"");render();return}
 }
 document.addEventListener("change",e=>{
   const t=e.target,d=t.dataset||{};
-  if(d.ps!=null){const k=d.ps,cur=S.prio.lines[k]||{};const v=t.value;logAct("Priority",v?(cur.level?"Priority changed":"Priority added"):"Priority removed",cur.disp||S.planDate,lineRef(k)+" · "+(cur.level||"Normal")+" → "+(v||"Normal"));
-    if(!v&&!cur.src&&!cur.ref&&!cur.note&&cur.qty==null)delete S.prio.lines[k];else S.prio.lines[k]={...cur,level:v,recv:cur.recv||(v?todayISO():"")};
-    savePrio();render();return}
+  if(d.ps!=null){const k=d.ps,cur=prioBase(S.prio.lines[k]);const v=t.value;
+    const sent=requestPrio(k,v?{...cur,level:v,recv:cur.recv||todayISO()}:null,"Item sheet");
+    if(sent)logAct("Priority","Priority requested",cur.disp||S.planDate,lineRef(k)+" · "+(cur.level||"Normal")+" → "+(v||"Normal"));
+    savePrio();render();toast(sent?"Priority sent for approval":"No change");return}
   if(t.id==="dqIn"){setQty(S.sel,t.value);render();return}
   if(d.sdate!=null){setRowDate(d.sdate,t.value);return}
   if(d.man!=null&&d.mdate){setManualAt(d.man,t.value,d.mdate);return}
@@ -1916,6 +2008,463 @@ $("#stMFile").addEventListener("change",async e=>{const f=e.target.files[0];e.ta
     logAct("Stock","Item master uploaded",S.stockDate,f.name+" · "+list.length+" FG codes"+(dup?" · "+dup+" duplicates removed":""));render();
     toast(list.length+" FG codes loaded"+(dup?" · "+dup+" duplicate rows removed":""));
   }catch(err){console.error(err);toast("Couldn't read that file. Save it as .xlsx and try again.")}});
+
+
+// ---------- attachment storage (any file type) ----------
+const EXT_MIME={pdf:"application/pdf",png:"image/png",jpg:"image/jpeg",jpeg:"image/jpeg",gif:"image/gif",webp:"image/webp",xlsx:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",xls:"application/vnd.ms-excel",xlsm:"application/vnd.ms-excel.sheet.macroEnabled.12",csv:"text/csv",docx:"application/vnd.openxmlformats-officedocument.wordprocessingml.document",doc:"application/msword",pptx:"application/vnd.openxmlformats-officedocument.presentationml.presentation",txt:"text/plain",zip:"application/zip",eml:"message/rfc822"};
+function mimeOf(name,type){const ext=String(name||"").toLowerCase().split(".").pop();if(type&&type!=="application/octet-stream"&&type!=="application/x-unknown")return type;return EXT_MIME[ext]||type||"application/octet-stream"}
+const ASSET_OK=/^(application\/pdf|image\/(png|jpe?g|webp|gif)|text\/(plain|csv))$/;
+async function storeBytes(bytes,name,type,prefix){
+  if(ASSET_OK.test(type)){let A=null;try{A=await claude.use("assets")}catch(_){}
+    if(A){try{const up=await A.upload(new File([bytes],name,{type}));if(up&&up.id)return{asset:up.id}}catch(_){}}}
+  const u=new Uint8Array(bytes);if(u.length>20*1024*1024)return null;
+  let b="";for(let i=0;i<u.length;i+=8192)b+=String.fromCharCode.apply(null,u.subarray(i,i+8192));const b64=btoa(b);
+  const CH=700000,parts=Math.max(1,Math.ceil(b64.length/CH)),fid=(prefix||"F"+Date.now().toString(36))+"_"+Math.random().toString(36).slice(2,7);
+  for(let i=0;i<parts;i++)await S.db.doc("mailf/"+(parts>1?fid+"_"+i:fid)).set({data:(i===0?"data:"+type+";base64,":"")+b64.slice(i*CH,(i+1)*CH),name,type,part:i,parts});
+  return{file:fid,parts}}
+async function loadBytes(x){if(x.asset){const r=await fetch("/_blob/"+x.asset);return await r.arrayBuffer()}
+  let d="";if(x.file){if((x.parts||1)>1){for(let i=0;i<x.parts;i++){const sn=await S.db.doc("mailf/"+x.file+"_"+i).get();d+=sn.exists?sn.data().data:""}}else{const sn=await S.db.doc("mailf/"+x.file).get();d=sn.exists?sn.data().data:""}}else d=x.data||"";
+  const b=atob(d.split(",")[1]||"");const a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a.buffer}
+async function dropBytes(x,A){try{if(x.file){const n=x.parts||1;for(let i=0;i<n;i++)await S.db.doc("mailf/"+(n>1?x.file+"_"+i:x.file)).delete()}if(x.asset&&A)await A.delete(x.asset)}catch(_){}}
+const attIcon=t=>/pdf/.test(t)?"📄":/^image\//.test(t)?"🖼":/sheet|excel|csv/.test(t)?"📊":/word/.test(t)?"📝":/zip/.test(t)?"🗜":"📎";
+const kb=n=>n>=1048576?(n/1048576).toFixed(1)+" MB":Math.max(1,Math.round(n/1024))+" KB";
+// ---------- .eml reader (headers, text, attachments) ----------
+function b2s(u8){let s="";for(let i=0;i<u8.length;i+=8192)s+=String.fromCharCode.apply(null,u8.subarray(i,i+8192));return s}
+function s2b(s){const u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i)&255;return u}
+function dec(bytes,cs){try{return new TextDecoder((cs||"utf-8").toLowerCase().replace(/^us-ascii$/,"utf-8"),{fatal:false}).decode(bytes)}catch(_){return new TextDecoder("utf-8").decode(bytes)}}
+function qpDecode(s){return s2b(s.replace(/=\r?\n/g,"").replace(/=([0-9A-Fa-f]{2})/g,(_,h)=>String.fromCharCode(parseInt(h,16))))}
+function b64Decode(s){try{return s2b(atob(s.replace(/[^A-Za-z0-9+/=]/g,"")))}catch(_){return new Uint8Array(0)}}
+function hdrWords(v){return String(v||"").replace(/\?=\s+=\?/g,"?==?").replace(/=\?([^?]+)\?([BbQq])\?([^?]*)\?=/g,(_,cs,enc,t)=>dec(/b/i.test(enc)?b64Decode(t):qpDecode(t.replace(/_/g," ")),cs)).replace(/\s+/g," ").trim()}
+function mimeSplit(raw){const m=raw.match(/\r?\n\r?\n/);const i=m?m.index:raw.length;const head=raw.slice(0,i).replace(/\r?\n[ \t]+/g," ");const body=m?raw.slice(i+m[0].length):"";const H={};head.split(/\r?\n/).forEach(l=>{const k=l.indexOf(":");if(k>0){const n=l.slice(0,k).trim().toLowerCase();if(!(n in H))H[n]=l.slice(k+1).trim()}});return{H,body}}
+function param(v,name){const m=String(v||"").match(new RegExp(name+"\\*?=\\s*(?:\"([^\"]*)\"|([^;\\s]+))","i"));return m?(m[1]??m[2]):""}
+function mimeWalk(raw,out){const{H,body}=mimeSplit(raw);const ct=(H["content-type"]||"text/plain").toLowerCase(),type=ct.split(";")[0].trim(),cte=(H["content-transfer-encoding"]||"").toLowerCase().trim();
+  if(type.startsWith("multipart/")){const bd=param(H["content-type"],"boundary");if(!bd)return;const parts=body.split("--"+bd);for(let i=1;i<parts.length;i++){let pt=parts[i];if(pt.startsWith("--"))break;mimeWalk(pt.replace(/^\r?\n/,""),out)}return}
+  if(type==="message/rfc822"&&!/attachment/i.test(H["content-disposition"]||"")){mimeWalk(body,out);return}
+  const bytes=cte==="base64"?b64Decode(body):cte==="quoted-printable"?qpDecode(body):s2b(body);
+  const fname=hdrWords(param(H["content-disposition"],"filename")||param(H["content-type"],"name"));const disp=(H["content-disposition"]||"").toLowerCase();
+  if(fname||disp.startsWith("attachment")||(type.startsWith("image/")&&H["content-id"])){out.atts.push({name:fname||("image."+(type.split("/")[1]||"bin")),type:mimeOf(fname,type),bytes,inline:!disp.startsWith("attachment")&&!!H["content-id"]});return}
+  if(type==="text/plain"&&!out.plain)out.plain=dec(bytes,param(H["content-type"],"charset"));
+  else if(type==="text/html"&&!out.html)out.html=dec(bytes,param(H["content-type"],"charset"));}
+function htmlToText(h){const d=new DOMParser().parseFromString(h,"text/html");d.querySelectorAll("script,style,head").forEach(x=>x.remove());d.querySelectorAll("br").forEach(x=>x.replaceWith("\n"));d.querySelectorAll("p,div,tr,li,h1,h2,h3,h4,table").forEach(x=>x.append("\n"));return(d.body?d.body.textContent:"").replace(/[ \t\u00a0]+/g," ").replace(/\n\s*\n\s*\n+/g,"\n\n").trim()}
+async function parseEml(f){const raw=b2s(new Uint8Array(await f.arrayBuffer()));const{H}=mimeSplit(raw);const out={atts:[],plain:"",html:""};mimeWalk(raw,out);
+  const body=(out.plain||htmlToText(out.html||"")).replace(/\r\n/g,"\n").replace(/\n{3,}/g,"\n\n").trim();
+  const E={from:hdrWords(H.from),to:hdrWords(H.to),cc:hdrWords(H.cc),date:hdrWords(H.date),subject:hdrWords(H.subject),msgid:hdrWords(H["message-id"]),atts:out.atts};
+  E.text="From: "+E.from+"\nDate: "+E.date+"\nTo: "+E.to+(E.cc?"\nCc: "+E.cc:"")+"\nSubject: "+E.subject+(E.atts.length?"\nAttachments: "+E.atts.map(a=>a.name).join(", "):"")+"\n\n"+body;
+  const dd=Date.parse(E.date);E.iso=isNaN(dd)?"":new Date(dd+330*60000).toISOString().slice(0,10);return E}
+async function takeMail(f){setPfMail(f);if(!/\.eml$/i.test(f.name)&&f.type!=="message/rfc822")return;
+  try{const E=await parseEml(f);S.pfEml=E;
+    if(!$("#pfRef").value.trim())$("#pfRef").value=(E.subject||"").slice(0,140);
+    const so=$("#pfSrc");const oi=[...so.options].findIndex(o=>/outlook|mail/i.test(o.value||o.text));if(oi>=0)so.selectedIndex=oi;
+    if(E.iso)$("#pfRecv").value=E.iso;
+    $("#pfMailText").value=E.text.slice(0,60000);
+    const sg=applyMailSuggestion(E);
+    // find pending POs named in the subject / mail
+    const hay=(E.subject+"\n"+E.text+"\n"+E.atts.map(a=>a.name).join(" ")).toUpperCase();const pos=[...new Set(((S.orders&&S.orders.rows)||[]).map(r=>r.po))].filter(po=>{const k=poShow(po).toUpperCase();return k.length>=4&&hay.includes(k)});
+    if(pos.length===1){$("#pfFind").value=poShow(pos[0]);$("#pfFind").dispatchEvent(new Event("change",{bubbles:true}));toast("Mail read · PO "+poShow(pos[0])+" found in pending SO")}
+    else if(pos.length>1)toast("Mail read · POs found: "+pos.slice(0,6).map(poShow).join(", ")+" — pick one above");
+    else{const m=hay.match(/(?:^|[^A-Z0-9])(P\d{6})(?![0-9])/);toast("Mail read"+(m?" · PO "+m[1]+" is not in the pending SO yet — upload the latest Sales Order Register":"")+"")}
+  }catch(err){console.error(err);toast("Couldn't read that .eml — attach it anyway or paste the text")}}
+
+// ---------- read the mail and suggest the priority ----------
+const MAIL_RULES=[
+  {lv:"HOLD",re:/\b(on hold|hold (?:the )?(?:dispatch|material|supply|delivery)|keep (?:it )?on hold|stop (?:the )?(?:dispatch|supply|delivery)|do not (?:dispatch|send|supply)|don'?t (?:dispatch|send|supply)|not to (?:dispatch|send)|postpone|defer(?:red)?|reschedule|cancel(?:led)? (?:the )?(?:dispatch|po|order|schedule)|no requirement|not required (?:now|currently))\b/gi},
+  {lv:"P1",re:/\b(most urgent|very urgent|urgent(?:ly)?|immediate(?:ly)?|top priority|highest priority|line (?:stop|stoppage|down)|production (?:stop|stoppage|hold)|critical|asap|as soon as possible|today itself|same day|without fail|on priority basis|emergency)\b/gi},
+  {lv:"P2",re:/\b(priority|at the earliest|earliest|expedite|advance(?:d)? (?:dispatch|delivery)|pre-?pone|required by|need(?:ed)? by|by tomorrow|tomorrow|early (?:dispatch|delivery))\b/gi}];
+function latestMessage(t){const body=t.split(/\n\n/).slice(1).join("\n\n");const cut=body.search(/\n_{8,}|\nFrom:\s.+\nSent:/i);return(cut>40?body.slice(0,cut):body).slice(0,6000)}
+function mailDates(txt,base){const out=[];const mon=["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+  const ctx=/(dispatch|deliver|deliver(?:y|ed)|supply|require|required|need|send|ship|schedule|by|before|on or before)/i;
+  txt.split(/\n/).forEach(line=>{if(!ctx.test(line))return;let m;const r1=/\b(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})\b/g;while((m=r1.exec(line))){const y=m[3].length===2?"20"+m[3]:m[3];const d=y+"-"+String(+m[2]).padStart(2,"0")+"-"+String(+m[1]).padStart(2,"0");if(!isNaN(Date.parse(d)))out.push(d)}
+    const r2=/\b(\d{1,2})(?:st|nd|rd|th)?[\s\-]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[\s,\-]*(\d{4})?\b/gi;while((m=r2.exec(line))){const y=m[3]||base.slice(0,4);const d=y+"-"+String(mon.indexOf(m[2].toLowerCase())+1).padStart(2,"0")+"-"+String(+m[1]).padStart(2,"0");if(!isNaN(Date.parse(d)))out.push(d)}
+    if(/\btoday\b/i.test(line))out.push(base);if(/\btomorrow\b/i.test(line))out.push(addDays(base,1))});
+  return out.filter(d=>d>=base).sort()}
+const noBoiler=t=>t.split(/\n\s*\n/).filter(p=>!/intended recipient|confidential|privileged|disclaimer|unauthori[sz]ed|virus|notify the sender|this (?:e-?mail|message) (?:and any|is)/i.test(p)).join("\n\n");
+function suggestPrio(E){const top=(E.subject||"")+"\n"+noBoiler(latestMessage(E.text||""));const all=(E.subject||"")+"\n"+noBoiler(E.text||"");
+  for(const src of[top,all]){for(const r of MAIL_RULES){const hits=[...new Set((src.match(r.re)||[]).map(x=>x.toLowerCase()))];if(hits.length)return{lv:r.lv,why:hits.slice(0,4),date:(mailDates(top,todayISO())[0]||"")}}}
+  return{lv:"",why:[],date:mailDates(top,todayISO())[0]||""}}
+function applyMailSuggestion(E){const sg=suggestPrio(E),box=$("#pfMailSug");
+  if(sg.lv){const b=$("#pfLevSeg").querySelector('[data-plv="'+sg.lv+'"]');if(b)b.click()}
+  if(sg.date){$("#pfDisp").value=sg.date;setTimeout(()=>{if(document.querySelector("#pfDet [data-pfd]"))$("#pfDispAll").click()},350)}
+  box.hidden=false;
+  box.innerHTML=sg.lv?'Mail read → priority set to <b>'+esc(PRIO_LABEL[sg.lv])+'</b>'+(sg.date?' · dispatch by <b>'+fd(sg.date)+'</b>':"")+'<div class="why">Found in the mail: “'+sg.why.map(esc).join("”, “")+'”. Check and change the level if needed.</div>'
+    :'Mail read → <b>no urgency or hold words found</b>'+(sg.date?' · dispatch by <b>'+fd(sg.date)+'</b>':"")+'<div class="why">A new PO with normal schedule usually needs no priority. Pick P1 / P2 / Hold yourself if the customer asked for it.</div>';
+  return sg}
+
+// ---------- Mail inbox: read many mails, compare with the priority already set ----------
+S.mails=[];
+function mailTargets(E){const rows=(S.orders&&S.orders.rows)||[];const hay=((E.subject||"")+"\n"+(E.text||"")+"\n"+((E.atts||[]).map(a=>a.name).join(" "))).toUpperCase();
+  const pos=[...new Set(rows.map(r=>r.po))].filter(po=>{const k=poShow(po).toUpperCase();return k.length>=4&&hay.includes(k)});
+  const lines=compute().lines.filter(l=>pos.includes(l.po));
+  const named=lines.filter(l=>hay.includes(l.item.toUpperCase())||(l.alt&&hay.includes(String(l.alt).toUpperCase())));
+  const m=hay.match(/(?:^|[^A-Z0-9])(P\d{6})(?![0-9])/);
+  return{pos,lines:named.length?named:lines,itemsNamed:named.length>0,poSeen:m?m[1]:""}}
+const LVR={P1:1,P2:2,"":3,HOLD:4};
+function mailCurrent(lines){const cur={};lines.forEach(l=>{const p=S.prio.lines[l.key];const k=(p&&p.level)||"";(cur[k]=cur[k]||[]).push({l,p})});return cur}
+function effLevel(k){const e=S.prio.lines[k];if(!e)return"";if(e.req)return e.req.remove?"":(e.req.level||"");return e.level||""}
+function decideStatus(sg,T){if(!T.pos.length)return"nopo";if(!sg.lv)return"info";
+  const has=T.lines.some(l=>{const e=S.prio.lines[l.key];return e&&(e.level||e.req)});
+  if(!has)return"auto";
+  if(T.lines.every(l=>effLevel(l.key)===sg.lv))return T.lines.some(l=>(S.prio.lines[l.key]||{}).req)?"pending":"applied";
+  return"todo"}
+function plansWith(lines){const ks=new Set(lines.map(l=>l.so+"|"+l.po+"|"+l.item));return(S.plans||[]).filter(p=>!isClosed(p)&&(p.lines||[]).some(x=>ks.has(x.so+"|"+x.po+"|"+x.item))).map(p=>({date:p.date,st:pStatus(p)}))}
+async function readMails(files){
+  if(!canPlan()){toast("Your login can't add mails");return}
+  const list=[...files].filter(f=>/\.eml$/i.test(f.name)||f.type==="message/rfc822");if(!list.length){toast("Drop .eml mails (drag them from Outlook)");return}
+  $("#mbInfo").textContent="Reading "+list.length+" mail"+(list.length>1?"s":"")+"…";
+  const known=new Set((S.mails||[]).map(m=>m.msgid).filter(Boolean));const done=[];let dup=0,bad=0,autoN=0;
+  for(const f of list){try{const E=await parseEml(f);if(E.msgid&&known.has(E.msgid)){dup++;continue}known.add(E.msgid);
+      const sg=suggestPrio(E),T=mailTargets(E);let st=decideStatus(sg,T);const auto=st==="auto";if(auto)st="pending";
+      const id=await saveMailCopy(f,"",{E,cust:T.lines[0]?T.lines[0].cust:"",ref:E.subject,src:"Outlook mail",recv:E.iso||todayISO(),quiet:true,
+        extra:{msgid:E.msgid||"",pos:T.pos,items:T.itemsNamed?[...new Set(T.lines.map(l=>l.item))]:[],poSeen:T.poSeen,sug:{lv:sg.lv,why:sg.why,date:sg.date},status:st,inbox:true,draft:makeDraft(E,sg,T)}});
+      if(auto){const d=makeDraft(E,sg,T)||{};let k=0;for(const l of T.lines){if(requestPrio(l.key,{level:sg.lv,src:"Outlook mail",recv:E.iso||todayISO(),ref:(E.subject||"").slice(0,140),note:d.note||"",disp:sg.date||"",mail:id},"Auto from mail")){const q=d.qty&&d.qty[l.key];if(q!=null)S.prio.lines[l.key].req.askQty=q;k++}}
+        if(k){savePrio();autoN+=k;logAct("Priority","Priority auto-created from mail",sg.date||todayISO(),"PO "+T.pos.map(poShow).join(", ")+" · "+PRIO_LABEL[sg.lv]+" · "+k+" line"+(k>1?"s":"")+" · "+(E.subject||""))}}
+      done.push(id)}catch(err){console.error(err);bad++}}
+  logAct("Priority","Mails read",todayISO(),done.length+" mail"+(done.length>1?"s":"")+(dup?" · "+dup+" already stored":"")+(bad?" · "+bad+" unreadable":""));
+  $("#mbInfo").textContent=done.length+" read"+(dup?" · "+dup+" already in the inbox":"")+(bad?" · "+bad+" could not be read":"");
+  render();const todo=(S.mails||[]).filter(m=>done.includes(m.id)&&m.status==="todo");
+  const ndm=(S.mails||[]).filter(m=>done.includes(m.id)&&m.status==="nopo"&&(m.atts||[]).some(a=>/sheet|excel|csv/i.test(a.type||"")));
+  if(todo.length)openReview(todo.map(m=>m.id));
+  else if(ndm.length===1&&canPlan()&&await demandFromMail(ndm[0])){toast("Net demand file found in the mail — check and create priorities")}
+  else if(autoN)toast(autoN+" customer priorit"+(autoN>1?"ies":"y")+" created from mail — waiting for planner check (Customer priorities tab). The plan is not changed.");
+  else toast(done.length?"Mails stored · no priority change needed":"No new mails");
+}
+$("#mbPick").addEventListener("click",()=>$("#mbFile").click());
+$("#mbFile").addEventListener("change",e=>{const fs=[...e.target.files];e.target.value="";readMails(fs)});
+{const d=$("#mbDrop");["dragenter","dragover"].forEach(ev=>d.addEventListener(ev,e=>{e.preventDefault();d.classList.add("on")}));d.addEventListener("dragleave",()=>d.classList.remove("on"));
+ d.addEventListener("drop",e=>{e.preventDefault();d.classList.remove("on");readMails(e.dataTransfer.files)})}
+["#mbShow","#mbQ"].forEach(id=>$(id).addEventListener("input",()=>render()));
+const MST={pending:"Waiting approval",todo:"Needs decision",applied:"Priority set",kept:"Kept old priority",info:"No priority asked",nopo:"PO not found"};
+function renderMailbox(){
+  const q=$("#mbQ").value.trim().toLowerCase(),show=$("#mbShow").value;
+  const M=(S.mails||[]).filter(m=>m.kind==="eml"||m.inbox).filter(m=>(show==="all"||(m.status||"info")===show)&&(!q||[m.subject,m.from,(m.pos||[]).join(" "),m.cust,m.poSeen].join(" ").toLowerCase().includes(q)));
+  const all=(S.mails||[]).filter(m=>m.kind==="eml"||m.inbox),todo=all.filter(m=>m.status==="todo").length;
+  $("#mbCount").textContent=all.length+" mails stored"+(todo?" · "+todo+" need a decision":"");
+  const ad=isAdmin()&&!S.local;S.mbSel=new Set([...(S.mbSel||[])].filter(id=>M.some(m=>m.id===id)));
+  $("#mbDelSel").hidden=!ad||!S.mbSel.size;$("#mbDelSel").textContent="Delete selected ("+S.mbSel.size+")";
+  $("#mbBody").innerHTML=M.length?'<table><thead><tr>'+(ad?'<th><input type="checkbox" id="mbAll" aria-label="Select all shown"'+(M.every(m=>S.mbSel.has(m.id))?" checked":"")+'></th>':"")+'<th>Mail date</th><th>From</th><th>Subject</th><th>PO</th><th>Mail asks</th><th>Priority now</th><th>Status</th><th></th></tr></thead><tbody>'+
+    M.map(m=>{const T=(m.pos||[]).length?compute().lines.filter(l=>m.pos.includes(l.po)&&(!(m.items||[]).length||m.items.includes(l.item))):[];const cur=Object.keys(mailCurrent(T));const st=m.status||"info";
+      return'<tr>'+(ad?'<td><input type="checkbox" data-msel="'+esc(m.id)+'" aria-label="Select mail"'+(S.mbSel.has(m.id)?" checked":"")+'></td>':"")+'<td class="n" style="white-space:nowrap">'+fd(m.recv)+'</td><td style="min-width:140px">'+esc(String(m.from||"").replace(/<.*>/,"").trim()||m.from||"—")+'</td><td style="min-width:220px">'+esc(m.subject||m.name||"—")+'</td>'+
+      '<td class="code">'+((m.pos||[]).length?m.pos.map(x=>esc(poShow(x))).join("<br>"):(m.poSeen?'<span class="late">'+esc(m.poSeen)+'</span><span class="sub">not in pending SO</span>':"—"))+'</td>'+
+      '<td>'+(m.sug&&m.sug.lv?'<b>'+esc(PRIO_LABEL[m.sug.lv])+'</b>'+(m.sug.date?'<span class="sub">by '+fd(m.sug.date)+'</span>':""):'<span class="muted">—</span>')+'</td>'+
+      '<td>'+(T.length?cur.map(k=>k?esc(PRIO_LABEL[k]):"Normal").join(" / "):"—")+'</td><td><span class="mst '+st+'">'+MST[st]+'</span>'+(m.decBy?'<span class="sub">'+esc(m.decBy)+" · "+esc(dt(m.decAt))+'</span>':"")+'</td>'+
+      '<td style="white-space:nowrap"><button type="button" class="mailbtn" data-mail="'+esc(m.id)+'">📎 View</button>'+(canPlan()&&(m.pos||[]).length&&m.sug&&m.sug.lv&&st!=="applied"?' <button type="button" class="btn sm" data-mrev="'+esc(m.id)+'">'+(st==="todo"?"Decide":"Review")+'</button>':"")+(canPlan()?' <button type="button" class="btn sm pri" data-mdraft="'+esc(m.id)+'">'+((m.pos||[]).length?"Priority draft":"Create priority")+'</button>':"")+(canPlan()&&m.from?' <button type="button" class="btn sm" data-mreply="'+esc(m.id)+'">Reply draft</button>':"")+(ad?' <button type="button" class="btn sm" data-mdel="'+esc(m.id)+'">Delete</button>':"")+'</td></tr>'}).join("")+'</tbody></table>'
+    :'<div class="empty">'+(all.length?"No mails match.":"No mails yet. Drag customer mails from Outlook onto the box above.")+'</div>';
+}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-mrev]");if(b)openReview([b.dataset.mrev])});
+function openReview(ids){
+  const M=ids.map(id=>(S.mails||[]).find(m=>m.id===id)).filter(Boolean);if(!M.length)return;
+  const card=m=>{const T=compute().lines.filter(l=>(m.pos||[]).includes(l.po)&&(!(m.items||[]).length||m.items.includes(l.item)));const cur=mailCurrent(T);const lv=m.sug.lv;
+    const pend=T.filter(l=>(S.prio.lines[l.key]||{}).req);const inPlan=plansWith(T);
+    const curTxt=Object.entries(cur).map(([k,arr])=>{const p=arr[0].p;return'<b>'+(k?esc(PRIO_LABEL[k]):"Normal (no priority)")+'</b> on '+arr.length+' line'+(arr.length>1?"s":"")+(p&&p.recv?'<div class="hint" style="margin:2px 0 0">set '+fd(p.recv)+(p.ref?' · '+esc(p.ref):"")+(p.disp?' · dispatch '+fd(p.disp):"")+'</div>':"")}).join('<div style="height:6px"></div>');
+    const firstSet=Object.keys(cur).some(k=>k&&k!==lv)||pend.some(l=>effLevel(l.key)!==lv);
+    const req=T.length?T.map(l=>l.reqDate).sort()[0]:"";
+    return'<div class="rv'+(firstSet?" conf":"")+'" data-rvid="'+esc(m.id)+'"><div class="rvh"><div style="min-width:0"><b>'+esc(m.subject||"(no subject)")+'</b><div class="hint" style="margin:2px 0 0">'+esc(String(m.from||"").replace(/<.*>/,""))+' · '+fd(m.recv)+' · PO '+(m.pos||[]).map(poShow).map(esc).join(", ")+(T[0]?' · '+esc(short(T[0].cust)):"")+(req?' · required '+fd(req):"")+'</div></div><button type="button" class="mailbtn" data-mail="'+esc(m.id)+'">📎 View mail</button></div>'+
+      (firstSet?'<div style="font-weight:700;color:#A1480B">⚠ Customer asks for a change in plan – a priority is already set for this PO and this mail asks something different.</div>'+(inPlan.length?'<div class="hint" style="margin:0">PO is in the dispatch plan of '+inPlan.map(x=>fd(x.date)+" ("+PST[x.st].t+")").join(", ")+' – after the change, check that plan and save it again.</div>':""):'<div style="font-weight:600">This mail asks for a priority on this PO — set it?</div>')+
+      (pend.length?'<div class="hint" style="margin:0">Pending approval now: '+[...new Set(pend.map(l=>{const r=S.prio.lines[l.key].req;return r.remove?"remove":PRIO_LABEL[r.level]}))].join(", ")+'</div>':"")+
+      '<div class="cmp"><div><div class="hint" style="margin:0 0 4px">Priority now</div>'+curTxt+'</div><div class="arrow">→</div><div><div class="hint" style="margin:0 0 4px">Mail asks</div><b>'+esc(PRIO_LABEL[lv])+'</b>'+(m.sug.date?' · dispatch by <b>'+fd(m.sug.date)+'</b>':"")+'<div class="hint" style="margin:2px 0 0">words: “'+(m.sug.why||[]).map(esc).join("”, “")+'”</div></div></div>'+
+      '<div class="toolbar"><button type="button" class="btn pri" data-rvset="'+esc(m.id)+'">'+(firstSet?"Accept change → ":"Set ")+esc(PRIO_LABEL[lv])+' (for approval)</button><button type="button" class="btn" data-rvkeep="'+esc(m.id)+'">'+(firstSet?"Keep current priority":"Don't set")+'</button><button type="button" class="btn" data-mdraft="'+esc(m.id)+'">Edit as draft</button><button type="button" class="btn" data-mreply="'+esc(m.id)+'">Reply draft</button></div></div>'};
+  $("#drawerRoot").innerHTML='<div class="scrim" data-close></div><aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="rvTitle" style="width:min(760px,100%)"><div class="dh"><div style="flex:1;min-width:0"><h3 id="rvTitle">Customer asks for change – '+M.length+' mail'+(M.length>1?"s":"")+'</h3><div class="hint">Compare what is set now with what the customer asks. Accepting sends the new priority for approval; the plan is not changed until you save it.</div></div><button class="btn sm" data-close>Later</button></div><div class="db" id="rvList" style="gap:12px">'+M.map(card).join("")+'</div></aside>';
+  $("#drawerRoot").querySelectorAll("[data-close]").forEach(x=>x.addEventListener("click",closeDrawer));
+  $("#rvList").addEventListener("click",async e=>{const set=e.target.closest("[data-rvset]"),keep=e.target.closest("[data-rvkeep]");if(!set&&!keep)return;
+    const id=(set||keep).dataset[set?"rvset":"rvkeep"];const m=(S.mails||[]).find(x=>x.id===id);if(!m)return;
+    if(set)await applyMailPriority(m);else await markMail(m,"kept","Kept old priority");
+    const el=$("#rvList").querySelector('[data-rvid="'+CSS.escape(id)+'"]');if(el)el.remove();if(!$("#rvList").children.length){closeDrawer();toast("All mails decided")}render()});
+}
+async function markMail(m,status,note){const w=whoNow();const upd={...m,status,decBy:w.by||"",decAt:new Date().toISOString()};delete upd.id;
+  try{await S.db.doc("mail/"+m.id).set(upd)}catch(_){}S.mails=(S.mails||[]).map(x=>x.id===m.id?{...upd,id:m.id}:x);
+  logAct("Priority",note,m.recv||todayISO(),(m.pos||[]).map(poShow).join(", ")+" · "+(m.subject||""))}
+async function applyMailPriority(m){
+  const T=compute().lines.filter(l=>(m.pos||[]).includes(l.po)&&(!(m.items||[]).length||m.items.includes(l.item)));if(!T.length){toast("PO not in pending SO");return}
+  const lv=m.sug.lv;const ch=[];
+  for(const l of T){const old=S.prio.lines[l.key]||{};if((old.level||"")!==lv)ch.push(l.item+" "+(old.level||"Normal")+"→"+lv);
+    requestPrio(l.key,{level:lv,src:"Outlook mail",recv:m.recv||todayISO(),ref:m.subject||"",note:old.note||"",qty:old.qty??null,disp:m.sug.date||old.disp||S.planDate,mail:m.id},"Mail inbox");if(0)S.prio.lines[l.key]={...(old.level&&old.level!==lv?{prev:{level:old.level,recv:old.recv||"",ref:old.ref||""}}:{})}}
+  savePrio();await markMail(m,"pending","Priority from mail sent for approval");
+  logAct("Priority","Priority changed from mail",m.sug.date||S.planDate,"PO "+(m.pos||[]).map(poShow).join(", ")+" → "+PRIO_LABEL[lv]+(ch.length?" · "+ch.slice(0,8).join("; "):"")+" · "+(m.subject||""));
+  toast("PO "+(m.pos||[]).map(poShow).join(", ")+": "+PRIO_LABEL[lv]+" sent for approval")}
+// ask before overwriting a priority that is already set (Customer priorities form)
+function askChange(rows,lv){return new Promise(res=>{
+  $("#drawerRoot").innerHTML='<div class="scrim" data-close></div><aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="acT"><div class="dh"><div style="flex:1"><h3 id="acT">Priority already set</h3><div class="hint">These lines already have a different priority</div></div></div><div class="db">'+
+    '<table><thead><tr><th>PO · item</th><th>Set now</th><th>New</th></tr></thead><tbody>'+rows.map(({l,p})=>'<tr><td>'+esc(poShow(l.po))+'<span class="sub code">'+esc(l.item)+'</span></td><td><b>'+esc(PRIO_LABEL[p.level]||"Normal")+'</b><span class="sub">'+fd(p.recv)+(p.ref?" · "+esc(p.ref):"")+'</span></td><td><b>'+esc(PRIO_LABEL[lv])+'</b></td></tr>').join("")+'</tbody></table>'+
+    '</div><div class="df"><button class="btn pri" id="acYes">Change to '+esc(PRIO_LABEL[lv])+'</button><button class="btn" id="acNo">Keep current</button></div></aside>';
+  const fin=v=>{closeDrawer();res(v)};$("#acYes").addEventListener("click",()=>fin(true));$("#acNo").addEventListener("click",()=>fin(false));$("#drawerRoot").querySelector("[data-close]").addEventListener("click",()=>fin(false))})}
+
+
+// ---------- auto draft: priority template + reply template from a mail ----------
+function mailQtys(E,T){const top=noBoiler(latestMessage(E.text||""));const out={};
+  const qre=/(\d{1,3}(?:,\d{3})+|\d+)\s*(?:nos|no'?s|pcs|pieces|numbers|units|qty)\b/gi;
+  const lines=T.lines;
+  top.split(/\n/).forEach(line=>{const U=line.toUpperCase();const hit=lines.filter(l=>U.includes(l.item.toUpperCase())||(l.alt&&U.includes(String(l.alt).toUpperCase())));let m;const q=[];while((m=qre.exec(line)))q.push(+m[1].replace(/,/g,""));
+    if(q.length&&hit.length===1&&!(hit[0].key in out))out[hit[0].key]=q[0]});
+  if(!Object.keys(out).length&&lines.length===1){const m=[...top.matchAll(qre)];if(m.length===1)out[lines[0].key]=+m[0][1].replace(/,/g,"")}
+  for(const k of Object.keys(out)){const l=lines.find(x=>x.key===k);if(l)out[k]=Math.min(out[k],l.pend)}
+  return out}
+function mailGist(E){const t=noBoiler(latestMessage(E.text||"")).split(/\n/).map(x=>x.trim()).filter(x=>x&&!/^(dear|hi|hello|regards|thanks|thank you|warm regards|best regards|kind atten)/i.test(x)&&x.length>12);return(t.find(x=>/dispatch|deliver|urgent|hold|require|need|send|supply|schedule/i.test(x))||t[0]||"").slice(0,160)}
+function makeDraft(E,sg,T){if(!T.pos.length)return null;return{level:sg.lv||"",disp:sg.date||"",qty:mailQtys(E,T),note:mailGist(E),items:T.itemsNamed?[...new Set(T.lines.map(l=>l.item))]:[]}}
+async function scanMailAtts(m){let t="";for(const a of (m.atts||[])){if(t.length>3e6)break;
+    if(!/sheet|excel|csv|\.xlsx?$|\.csv$/i.test((a.type||"")+" "+(a.name||"")))continue;
+    try{const buf=await loadBytes(a);const wb=XLSX.read(new Uint8Array(buf),{type:"array"});wb.SheetNames.forEach(n=>{t+="\n"+XLSX.utils.sheet_to_csv(wb.Sheets[n])})}catch(_){}}
+  return t.toUpperCase()}
+function hasCode(h,c){c=String(c||"").toUpperCase().trim();if(c.length<5)return false;let i=h.indexOf(c);while(i>=0){const a=h[i-1]||" ",z=h[i+c.length]||" ";if(!/[A-Z0-9]/.test(a)&&!/[A-Z0-9]/.test(z))return true;i=h.indexOf(c,i+1)}return false}
+function guessCust(m,hay){const L=compute().lines;const custs=[...new Set(L.map(l=>l.cust))];
+  const from=String(m.from||"").toLowerCase(),dom=(from.match(/@([^>\s]+)/)||[])[1]||"";
+  const txt=((m.subject||"")+" "+(m.text||"")).toLowerCase()+" "+(hay||"").toLowerCase().slice(0,200000);
+  const skip=/^(pvt|ltd|limited|private|india|industries|the|and|electrical|systems|digital|engineering|company|co|enterprises|products|technologies)$/;
+  let best="",bs=0;custs.forEach(c=>{const w=c.toLowerCase().replace(/[^a-z0-9 ]/g," ").split(/\s+/).filter(x=>x.length>=4&&!skip.test(x));
+    let sc=0;w.forEach(x=>{if(dom.includes(x))sc+=5;if(from.includes(x))sc+=3;if(txt.includes(x))sc+=1});if(sc>bs){bs=sc;best=c}});return best}
+async function openDraft(id){const m=(S.mails||[]).find(x=>x.id===id);if(!m)return;
+  if(!(m.pos||[]).length){toast("Reading mail and attachments…");if(await demandFromMail(m))return;const hay=await scanMailAtts(m);
+    const L0=compute().lines;const hayAll=hay+"\n"+((m.subject||"")+"\n"+(m.text||"")).toUpperCase();
+    const pos=[...new Set(L0.map(l=>l.po))].filter(po=>{const k=poShow(po).toUpperCase();return k.length>=5&&hayAll.includes(k)});
+    let lines=L0.filter(l=>pos.includes(l.po));
+    const named=L0.filter(l=>(pos.length?pos.includes(l.po):true)&&(hasCode(hayAll,l.item)||(l.alt&&(hasCode(hayAll,l.alt)||hasCode(hayAll,String(l.alt).replace(/^[A-Z]+\//i,""))))));
+    if(named.length)lines=named;
+    let cust=lines.length?lines[0].cust:"";if(lines.length){const cc={};lines.forEach(l=>cc[l.cust]=(cc[l.cust]||0)+1);cust=Object.entries(cc).sort((a,b)=>b[1]-a[1])[0][0]}
+    if(!cust)cust=guessCust(m,hay);const ls=lines.filter(l=>l.cust===cust);
+    const pS=[...new Set(ls.map(l=>l.po))],iS=[...new Set(ls.map(l=>l.item))];
+    closeDrawer();setTab("prio");resetPf(false);
+    S.pf={cust:cust||"",po:pS.length===1?pS[0]:"",item:iS.length===1?iS[0]:""};
+    const lv=(m.sug&&m.sug.lv)||"P1";const b=$("#pfLevSeg").querySelector('[data-plv="'+lv+'"]');if(b)b.click();
+    const so=$("#pfSrc");const oi=[...so.options].findIndex(o=>/outlook|mail/i.test(o.value||o.text));if(oi>=0)so.selectedIndex=oi;
+    $("#pfRecv").value=m.recv||todayISO();$("#pfRef").value=(m.subject||"").slice(0,140);$("#pfNote").value=mailGist({text:m.text||"",subject:m.subject||""})||"";$("#pfMailText").value="";
+    S.pfMailId=m.id;const nm=$("#pfMailName");nm.textContent="Linked mail: "+(m.subject||m.name||"mail");nm.className="mname";$("#pfMailDel").hidden=false;$("#pfDrop").classList.add("on");
+    render();if(m.sug&&m.sug.date){$("#pfDisp").value=m.sug.date;document.querySelectorAll("#pfDet [data-pfd]").forEach(d=>{d.value=m.sug.date;d.classList.toggle("other",m.sug.date!==S.planDate)})}
+    try{updPfTotals()}catch(_){}
+    const box=$("#pfMailSug");box.hidden=false;
+    box.innerHTML='<b>Create priority from mail</b> – no PO number in the mail'+(ls.length?'; found <b>'+ls.length+'</b> pending line'+(ls.length>1?"s":"")+' of <b>'+esc(cust)+'</b> from the '+(hay?"attachment / ":"")+'mail ('+pS.length+' PO, '+iS.length+' item'+(iS.length>1?"s":"")+')':cust?'; customer guessed from sender: <b>'+esc(cust)+'</b>':"")+'.'+
+      (ls.length>1&&ls.length<=40?'<div class="toolbar" style="margin-top:6px">'+ls.map(l=>'<button type="button" class="btn sm" data-pfpick="'+esc(l.po)+'|'+esc(l.item)+'">'+esc(l.item)+' · '+esc(poShow(l.po))+' · pend '+n(l.pend)+'</button>').join("")+'</div>':"")+
+      '<div class="why">Select / check the <b>Customer, FG code and PO</b> above, the level'+(m.sug&&m.sug.lv?' ('+esc(PRIO_LABEL[m.sug.lv])+' read from mail)':' (P1 preselected)')+' and date, then click <b>Add priority &amp; dispatch qty</b>. It goes for approval.</div>';
+    $("#prioAdd").scrollIntoView({behavior:"smooth",block:"start"});toast(ls.length?"Lines found — check and click Add priority":"Select customer, item and PO, then click Add priority");return}
+  const d=m.draft||{level:(m.sug&&m.sug.lv)||"",disp:(m.sug&&m.sug.date)||"",qty:{},note:"",items:m.items||[]};
+  const L=compute().lines.filter(l=>m.pos.includes(l.po));if(!L.length){toast("PO not in pending SO");return}
+  closeDrawer();setTab("prio");resetPf(false);
+  S.pf={cust:L[0].cust,po:m.pos.length===1?m.pos[0]:"",item:(d.items||[]).length===1?d.items[0]:""};
+  const lv=d.level||"P1";const b=$("#pfLevSeg").querySelector('[data-plv="'+lv+'"]');if(b)b.click();
+  const so=$("#pfSrc");const oi=[...so.options].findIndex(o=>/outlook|mail/i.test(o.value||o.text));if(oi>=0)so.selectedIndex=oi;
+  $("#pfRecv").value=m.recv||todayISO();$("#pfRef").value=(m.subject||"").slice(0,140);$("#pfNote").value=d.note||"";$("#pfMailText").value="";
+  S.pfMailId=m.id;const nm=$("#pfMailName");nm.textContent="Linked mail: "+(m.subject||m.name||"mail");nm.className="mname";$("#pfMailDel").hidden=false;$("#pfDrop").classList.add("on");
+  render();
+  if(d.disp)$("#pfDisp").value=d.disp;
+  document.querySelectorAll("#pfDet [data-pfq]").forEach(i=>{const k=i.dataset.pfq;if(d.qty&&d.qty[k]!=null)i.value=d.qty[k];const dEl=document.querySelector('[data-pfd="'+CSS.escape(k)+'"]');if(dEl&&d.disp){dEl.value=d.disp;dEl.classList.toggle("other",d.disp!==S.planDate)}});
+  try{updPfTotals()}catch(_){}
+  const box=$("#pfMailSug");box.hidden=false;
+  box.innerHTML='<b>Priority draft from mail</b> – '+(d.level?esc(PRIO_LABEL[d.level]):"no level found in mail (P1 preselected – change if needed)")+(d.disp?' · dispatch '+fd(d.disp):"")+(d.qty&&Object.keys(d.qty).length?' · qty from mail on '+Object.keys(d.qty).length+' line'+(Object.keys(d.qty).length>1?"s":""):"")+'<div class="why">Check the lines, level, date and qty, then click <b>Add priority &amp; dispatch qty</b>.</div>';
+  $("#prioAdd").scrollIntoView({behavior:"smooth",block:"start"});toast("Priority draft ready — check and click Add priority")}
+
+/* ---------- Net demand file (customer Excel) → priorities ---------- */
+const ND={};
+function ndNum(v){if(typeof v==="number")return v;const t=String(v==null?"":v).replace(/,/g,"").trim();return /^-?\d+(\.\d+)?$/.test(t)?+t:null}
+function ndNorm(c){return String(c==null?"":c).toUpperCase().replace(/\s+/g,"").trim()}
+/* Warehouse column → ship-to location (Legrand net demand) */
+const ND_LOC=[[/wh-?1\b|bhiwandi/i,"Bhiwandi"],[/\bblr\b|bangal|bengal/i,"Bengaluru"],[/\bcal\b|calcut|kolkat/i,"Kolkata"],[/\bhar\b|sonipat/i,"Sonipat"],[/nagpur/i,"Nagpur"]];
+const ND_ALIAS={Bengaluru:["bengaluru","bangalore","banglore","blr"],Kolkata:["kolkata","calcutta","calcuta"],Bhiwandi:["bhiwandi"],Sonipat:["sonipat","sonepat"],Nagpur:["nagpur"]};
+function ndLocOf(h){const m=ND_LOC.find(([re])=>re.test(h));return m?m[1]:""}
+function locMatch(shipTo,loc){if(!loc)return true;const s=String(shipTo||"").toLowerCase();return(ND_ALIAS[loc]||[loc.toLowerCase()]).some(a=>s.includes(a))}
+/* LK ageing bucket → priority: >60 & 46-60 = P1, 5-45 = P2, 0-4 = Normal */
+function ndZvLevel(h){const t=String(h).replace(/\s+/g,"");if(/>\d+/.test(t))return"P1";const m=t.match(/(\d+)-(\d+)/);if(!m)return"P2";const lo=+m[1];return lo>=46?"P1":lo>=5?"P2":""}
+const LVNAME=v=>v?PRIO_LABEL[v]:"Normal";
+function parseDemand(wb){const out=[];
+  wb.SheetNames.forEach(sn=>{const A=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:""});
+    let hi=-1,ci=-1;for(let r=0;r<Math.min(A.length,15);r++){const row=A[r].map(x=>String(x).trim().toLowerCase());
+      const c=row.findIndex(x=>/^(item ?code|cat\.? ?no\.?|catalog(ue)? ?no|part ?no\.?|part ?number|material( code)?|item ?no\.?|customer ?item ?code|code)$/.test(x));
+      if(c>=0&&row.some(x=>/demand|qty|quantity|requirement|zv/.test(x))){hi=r;ci=c;break}}
+    if(hi<0)return;const H=A[hi].map(x=>String(x).trim());const body=A.slice(hi+1);
+    const di=H.findIndex(x=>/desc/i.test(x));
+    const numCol=i=>body.some(r=>ndNum(r[i])!=null);
+    const qc=[];H.forEach((h,i)=>{if(i===ci||!h)return;if(/gross|rate|price|value|amount/i.test(h))return;if(/demand|qty|quantity|requirement|zv|^net/i.test(h)&&numCol(i))qc.push({i,name:h})});
+    if(!qc.length)return;
+    const locCols=qc.filter(q=>/net ?demand/i.test(q.name)&&!/total/i.test(q.name)&&ndLocOf(q.name)).map(q=>({...q,loc:ndLocOf(q.name)}));
+    const zvCols=qc.filter(q=>/^zv\s*(>|\d)/i.test(q.name)).map(q=>({...q,loc:"Nagpur",lv:ndZvLevel(q.name)}));
+    let rule=null;if(locCols.length>=2)rule={kind:"loc",cols:locCols,name:"Location-wise net demand (rule)"};else if(zvCols.length>=2)rule={kind:"zv",cols:zvCols,name:"Ageing buckets – Nagpur (rule)"};
+    const opts=(rule?[{rule:true,name:rule.name}]:[]).concat(qc.filter(q=>!(rule&&/total/i.test(q.name)&&/net/i.test(q.name))).map(q=>({i:q.i,name:q.name})));
+    const remI=H.map((h,i)=>/remark|super|priority|comment|note/i.test(h)?i:-1).filter(i=>i>=0);
+    const rows=[];body.forEach(r=>{const code=String(r[ci]==null?"":r[ci]).trim();if(!code||/^total/i.test(code))return;
+      rows.push({code,desc:di>=0?String(r[di]||""):"",cells:r,rem:remI.map(i=>String(r[i]||"").trim()).filter(Boolean).join(" · ")})});
+    out.push({sheet:sn,rule,opts,col:0,rows})});
+  return out}
+function ndIndex(){const idx={};const add=(k,l)=>{k=ndNorm(k);if(k.length<4)return;(idx[k]=idx[k]||[]).includes(l)||idx[k].push(l)};
+  const L=compute().lines;L.forEach(l=>{add(l.item,l);if(l.alt){add(l.alt,l);add(String(l.alt).replace(/^[A-Z]+\//i,""),l)}
+    String(l.desc||"").split("_").slice(1).forEach(seg=>{seg=seg.trim();if(/^[A-Z0-9-]{5,}$/i.test(seg)&&/\d/.test(seg))add(seg,l)})});
+  const im=(S.itemMaster&&S.itemMaster.list)||[];im.forEach(x=>{if(!x.alt)return;L.filter(l=>l.item===x.item&&(!x.cust||l.cust===x.cust)).forEach(l=>{add(x.alt,l);add(String(x.alt).replace(/^[A-Z]+\//i,""),l)})});
+  return idx}
+const fifo=(a,b)=>String(a.reqDate||a.poDate||"").localeCompare(String(b.reqDate||b.poDate||""))||String(a.poDate||"").localeCompare(String(b.poDate||""));
+const LVR2={P1:1,P2:2,"":3,HOLD:4};
+function ndBuild(){const idx=ndIndex();const res=[];let ign=0;
+  ND.sheets.forEach((sh,si)=>{const o=sh.opts[sh.col]||{};const useRule=!!o.rule;const cols=useRule?sh.rule.cols:[{i:o.i,name:o.name,loc:""}];sh.showCols=cols;sh.mode=useRule?sh.rule.kind:"one";
+    const agg={};sh.rows.forEach(r=>{const k=ndNorm(r.code);const a=agg[k]||(agg[k]={si,code:r.code,desc:r.desc,rem:"",q:cols.map(()=>0)});
+      cols.forEach((c,j)=>{const v=ndNum(r.cells[c.i]);if(v>0)a.q[j]+=v});if(r.rem&&!a.rem.includes(r.rem))a.rem+=(a.rem?" · ":"")+r.rem});
+    Object.values(agg).forEach(d=>{d.qty=d.q.reduce((x,y)=>x+y,0);if(d.qty<=0){ign++;return}
+      const L=(idx[ndNorm(d.code)]||[]).slice().sort(fifo);
+      // parts with priority by rule
+      let parts=cols.map((c,j)=>({label:c.name,loc:c.loc,q:d.q[j],lv:c.lv})).filter(p=>p.q>0);
+      if(sh.mode==="loc"){const mx=Math.max(...parts.map(p=>p.q));parts.forEach(p=>p.lv=p.q===mx?"P1":"P2")}
+      else if(sh.mode==="one")parts.forEach(p=>p.lv=/priority|urgent|super ?300/i.test(d.rem)?"P1":(ND.defLv||"P2"));
+      if(sh.mode==="zv")parts.sort((a,b)=>LVR2[a.lv]-LVR2[b.lv]);
+      const ov=ND.lv&&ND.lv[si+"|"+ndNorm(d.code)];if(ov!=null&&ov!=="rule")parts.forEach(p=>p.lv=ov==="N"?"":ov);
+      // allocate: each part to its ship-to location, oldest PO first
+      const al=new Map();let short=0;const miss=[];const used=new Map();
+      parts.forEach(p=>{const ls=L.filter(l=>locMatch(l.loc,p.loc));let left=p.q;
+        ls.forEach(l=>{if(left<=0)return;const free=l.pend-(used.get(l.key)||0);const q=Math.min(left,free);if(q<=0)return;used.set(l.key,(used.get(l.key)||0)+q);left-=q;
+          const a=al.get(l.key)||{l,q:0,lv:p.lv,from:[]};a.q+=q;if(LVR2[p.lv]<LVR2[a.lv])a.lv=p.lv;a.from.push((p.loc&&sh.mode==="loc"?p.loc:p.label)+" "+n(q));al.set(l.key,a)});
+        if(left>0){short+=left;miss.push((p.loc&&sh.mode==="loc"?p.loc:p.label)+" "+n(left)+(ls.length?" more than pending":" – no PO for "+(p.loc||"this item")))}});
+      Object.assign(d,{parts,al:[...al.values()],short,miss,anyL:L.length,l0:L[0]});res.push(d)})});
+  ND.res=res;ND.ign=ign}
+function ndRender(){ndBuild();const R=ND.res;ND.on=ND.on||{};ND.lv=ND.lv||{};
+  R.forEach(d=>{const k=d.si+"|"+ndNorm(d.code);if(ND.on[k]==null)ND.on[k]=!!d.al.length});
+  const lvTag=v=>'<span class="pl '+(v==="P1"?"p1":v==="P2"?"p2":v==="HOLD"?"hold":"")+'" style="font-size:11px;padding:1px 6px;border-radius:9px;background:'+(v==="P1"?"#FBE3E3;color:#A32020":v==="P2"?"#FFF1C9;color:#8A6100":v==="HOLD"?"#E7EEF7;color:#2F4B73":"#EEF1F4;color:#5B6B82")+'">'+esc(v||"Normal")+'</span>';
+  const body=ND.sheets.map((sh,si)=>{const rs=R.filter(d=>d.si===si);const cols=sh.showCols;
+    const rule=sh.mode==="loc"?"Each warehouse qty goes to POs shipping to that location · the location with the higher qty = P1, other locations = P2":sh.mode==="zv"?"All qty goes to POs shipping to Nagpur · ZV >60 &amp; 46-60 = P1 · 5-45 = P2 · 0-4 = Normal":"Qty given to the oldest PO first";
+    return '<div class="pohd" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><b>Sheet: '+esc(sh.sheet)+'</b><label class="f" style="margin:0;flex-direction:row;align-items:center;gap:6px">Read <select data-ndcol="'+si+'">'+sh.opts.map((c,i)=>'<option value="'+i+'"'+(i===sh.col?" selected":"")+'>'+esc(c.name)+'</option>').join("")+'</select></label><span class="hint" style="margin:0">'+rs.length+' item'+(rs.length!==1?"s":"")+' with demand &gt; 0 · '+rs.filter(d=>d.al.length).length+' found in pending SO</span><span class="hint" style="margin:0;flex-basis:100%">'+rule+'</span></div>'+
+      (rs.length?'<div class="tw"><table class="tbl"><thead><tr><th></th><th>Customer code</th><th>Description</th>'+cols.map(c=>'<th class="n">'+esc(sh.mode==="loc"?c.loc:sh.mode==="zv"?c.name.replace(/^zv\s*/i,"ZV "):"Demand")+(sh.mode==="loc"?'<span class="sub">'+esc(c.name.replace(/^net ?demand\s*[-–:]?\s*/i,""))+'</span>':sh.mode==="zv"?'<span class="sub">'+esc(c.lv||"Normal")+'</span>':"")+'</th>').join("")+(cols.length>1?'<th class="n">Total</th>':"")+'<th>Priority</th><th>FG code · customer</th><th>PO · ship to · qty · priority</th><th>Not covered</th></tr></thead><tbody>'+
+      rs.map(d=>{const k=d.si+"|"+ndNorm(d.code);const l0=d.al[0]&&d.al[0].l;const ov=ND.lv[k]||"rule";
+        return '<tr'+(d.al.length?"":' style="opacity:.55"')+'><td><input type="checkbox" data-ndon="'+esc(k)+'"'+(ND.on[k]?" checked":"")+(d.al.length?"":" disabled")+'></td><td><b>'+esc(d.code)+'</b>'+(d.rem?'<span class="sub" style="color:var(--bad)">'+esc(d.rem)+'</span>':"")+'</td><td>'+esc(d.desc)+'</td>'+
+          cols.map((c,j)=>{const q=d.q[j];const p=d.parts.find(x=>x.label===c.name);return'<td class="n">'+(q>0?'<b>'+n(q)+'</b>'+(cols.length>1&&p?'<div>'+lvTag(p.lv)+'</div>':""):'<span class="muted">—</span>')+'</td>'}).join("")+(cols.length>1?'<td class="n"><b>'+n(d.qty)+'</b></td>':"")+
+          '<td>'+(d.al.length?'<select data-ndlv="'+esc(k)+'"><option value="rule"'+(ov==="rule"?" selected":"")+'>As per rule</option>'+["P1","P2","N","HOLD"].map(v=>'<option value="'+v+'"'+(ov===v?" selected":"")+'>'+esc(v==="N"?"Normal":PRIO_LABEL[v])+'</option>').join("")+'</select>':"—")+'</td>'+
+          '<td>'+(l0||d.l0?esc((l0||d.l0).item)+'<span class="sub">'+esc((l0||d.l0).cust)+'</span>':'<span class="late">Not in pending SO</span>')+'</td>'+
+          '<td style="white-space:nowrap">'+(!d.al.length&&d.l0?'<span class="muted">No pending PO for '+esc(d.parts.map(p=>p.loc||p.label).join(", "))+'</span>':"")+d.al.map(a=>esc(poShow(a.l.po))+' · '+esc(a.l.loc)+' · <b>'+n(a.q)+'</b> '+lvTag(a.lv)).join("<br>")+'</td>'+
+          '<td>'+(d.miss.length?'<span class="late" style="font-size:12px">'+d.miss.map(esc).join("<br>")+'</span>':"")+'</td></tr>'}).join("")+'</tbody></table></div>':'<div class="hint" style="padding:8px 12px">No item with demand above zero.</div>')}).join("");
+  const nSel=R.filter(d=>d.al.length&&ND.on[d.si+"|"+ndNorm(d.code)]);const nL=nSel.reduce((t,d)=>t+d.al.length,0);const no=R.filter(d=>!d.anyL);
+  $("#drawerRoot").innerHTML='<div class="scrim" data-close></div><aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="ndT" style="width:min(1250px,100%)"><div class="dh"><div style="flex:1;min-width:0"><h3 id="ndT">Net demand file → customer priorities</h3><div class="hint">'+esc(ND.name||"")+' · values equal to or below zero are ignored ('+ND.ign+' item'+(ND.ign!==1?"s":"")+') · qty goes to the oldest pending PO of that ship-to location first</div></div><button class="btn sm" data-close>Close</button></div>'+
+    '<div class="db" style="padding:0;display:block;overflow:auto">'+
+    '<div class="toolbar" style="padding:10px 14px;gap:10px;flex-wrap:wrap"><label class="f" style="margin:0">Received on<input type="date" id="ndRecv" value="'+esc(ND.recv||todayISO())+'"></label><label class="f" style="margin:0;min-width:260px;flex:1">Reference<input id="ndRef" value="'+esc(ND.ref||"")+'"></label>'+
+    '<label class="f" style="margin:0">Set all to<select id="ndAll"><option value="">—</option><option value="rule">As per rule</option><option value="P1">'+esc(PRIO_LABEL.P1)+'</option><option value="P2">'+esc(PRIO_LABEL.P2)+'</option><option value="N">Normal</option><option value="HOLD">'+esc(PRIO_LABEL.HOLD)+'</option></select></label></div>'+
+    (no.length?'<div class="hint" style="padding:0 14px 8px">'+no.length+' code'+(no.length>1?"s are":" is")+' not in the pending SO (shown faded) – no priority can be set for them.</div>':"")+body+'</div>'+
+    '<div class="df"><span class="hint" style="margin-right:auto">'+nSel.length+' item'+(nSel.length!==1?"s":"")+' · '+nL+' PO line'+(nL!==1?"s":"")+' will be sent for approval. The plan is not changed.</span><button class="btn pri" id="ndGo"'+(nL?"":" disabled")+'>Create priorities (for approval)</button><button class="btn" data-close>Cancel</button></div></aside>';
+  const D=$("#drawerRoot");D.querySelectorAll("[data-close]").forEach(x=>x.addEventListener("click",closeDrawer));
+  const keep=()=>{ND.recv=$("#ndRecv").value;ND.ref=$("#ndRef").value};
+  D.querySelectorAll("[data-ndcol]").forEach(x=>x.addEventListener("change",()=>{keep();ND.sheets[+x.dataset.ndcol].col=+x.value;ndRender()}));
+  D.querySelectorAll("[data-ndon]").forEach(x=>x.addEventListener("change",()=>{keep();ND.on[x.dataset.ndon]=x.checked;ndRender()}));
+  D.querySelectorAll("[data-ndlv]").forEach(x=>x.addEventListener("change",()=>{keep();ND.lv[x.dataset.ndlv]=x.value;ndRender()}));
+  $("#ndAll").addEventListener("change",e=>{if(!e.target.value)return;keep();ND.lv={};ND.res.forEach(d=>ND.lv[d.si+"|"+ndNorm(d.code)]=e.target.value);ndRender()});
+  $("#ndGo").addEventListener("click",ndApply)}
+async function ndApply(){if(!canPlan())return;const recv=$("#ndRecv").value||todayISO(),ref=($("#ndRef").value||ND.name||"Net demand file").slice(0,140);
+  let k=0;const items=[];
+  ND.res.forEach(d=>{const key=d.si+"|"+ndNorm(d.code);if(!d.al.length||!ND.on[key])return;items.push(d.code);
+    d.al.forEach(a=>{const ne={src:ND.mail?"Outlook mail":"Customer demand file",recv,ref,note:"Net demand "+d.code+": "+a.from.join(" + ")+(d.rem?" · "+d.rem:""),mail:ND.mail||""};if(a.lv)ne.level=a.lv;
+      if(requestPrio(a.l.key,ne,"Net demand file")){S.prio.lines[a.l.key].req.askQty=a.q;k++}})});
+  if(!k){toast("Nothing new — these priorities are already set");return}
+  savePrio();logAct("Priority","Priorities from net demand file",recv,items.length+" item"+(items.length>1?"s":"")+" · "+k+" PO line"+(k>1?"s":"")+" · "+ref);
+  if(ND.mail){const m=(S.mails||[]).find(x=>x.id===ND.mail);if(m)await markMail(m,"pending","Priorities from net demand file sent for approval")}
+  closeDrawer();setTab("prio");render();toast(k+" priorit"+(k>1?"ies":"y")+" created from the net demand file — waiting for approval. The plan is not changed.")}
+function openDemand(wb,meta){const sh=parseDemand(wb);if(!sh.length)return false;
+  Object.keys(ND).forEach(k=>delete ND[k]);Object.assign(ND,{sheets:sh,name:meta.name||"",mail:meta.mail||"",ref:meta.ref||meta.name||"",recv:meta.recv||todayISO(),defLv:"P2"});
+  ndRender();return true}
+async function demandFromMail(m){for(const a of (m.atts||[])){if(!/sheet|excel|csv|\.xlsx?$|\.xlsm$|\.csv$/i.test((a.type||"")+" "+(a.name||"")))continue;
+    try{const buf=await loadBytes(a);const wb=XLSX.read(new Uint8Array(buf),{type:"array"});if(openDemand(wb,{name:a.name,mail:m.id,ref:(m.subject||a.name||"").slice(0,140),recv:m.recv}))return true}catch(e){console.error(e)}}
+  return false}
+$("#ndPick").addEventListener("click",()=>$("#ndFile").click());
+$("#ndFile").addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
+  try{const wb=XLSX.read(new Uint8Array(await f.arrayBuffer()),{type:"array"});if(!openDemand(wb,{name:f.name}))toast("No demand columns found — the sheet needs an item / CAT code column and a demand or qty column")}catch(err){console.error(err);toast("Could not read this file")}});
+function replyDraft(id){const m=(S.mails||[]).find(x=>x.id===id);if(!m)return;
+  const to=(String(m.from||"").match(/<([^>]+)>/)||[])[1]||String(m.from||"").trim();
+  const L=compute().lines.filter(l=>(m.pos||[]).includes(l.po)&&(!(m.items||[]).length||m.items.includes(l.item)));
+  const p0=L.map(l=>S.prio.lines[l.key]).find(Boolean)||{};const lv=p0.level||(m.sug&&m.sug.lv)||"";const dd=p0.disp||(m.sug&&m.sug.date)||"";
+  const name=(String(m.from||"").replace(/<.*>/,"").trim().split(/\s+/)[0]||"Sir");
+  const body="Dear "+name+",\n\nThank you for your mail regarding PO "+(m.pos||[m.poSeen]).filter(Boolean).map(poShow).join(", ")+".\n\n"+
+    (lv==="HOLD"?"We have put the dispatch against this PO on hold as requested. We will resume once you confirm.\n":lv?"We have noted your requirement and marked it as "+PRIO_LABEL[lv]+" in our dispatch plan.\n":"We have noted your requirement.\n")+
+    (L.length&&lv!=="HOLD"?"\n"+L.map(l=>"- "+l.item+" "+l.desc+" | pending "+n(l.pend)+" "+(l.uom||"NOS")+(dd?" | planned dispatch "+fd(dd):"")).join("\n")+"\n":"")+
+    (dd&&lv!=="HOLD"?"\nPlanned dispatch date: "+fd(dd)+". We will share the dispatch details after dispatch.\n":"")+
+    "\nRegards,\n"+((S.me&&S.me.name)||"Dispatch Planning")+"\nNasik Metaldust Pvt. Ltd.";
+  const sub=/^re:/i.test(m.subject||"")?m.subject:"RE: "+(m.subject||"");const e=encodeURIComponent;
+  $("#drawerRoot").innerHTML='<div class="scrim" data-close></div><aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="rpT" style="width:min(680px,100%)"><div class="dh"><div style="flex:1;min-width:0"><h3 id="rpT">Reply draft</h3><div class="hint">Edit if needed, then open in Outlook Web or copy</div></div><button class="btn sm" data-close>Close</button></div>'+
+   '<div class="db"><label class="f" for="rpTo">To<input id="rpTo" value="'+esc(to)+'"></label><label class="f" for="rpSub">Subject<input id="rpSub" value="'+esc(sub)+'"></label><label class="f" for="rpBody">Message<textarea id="rpBody" rows="14">'+esc(body)+'</textarea></label></div>'+
+   '<div class="df"><a class="btn pri" id="rpOl" target="nmdOutlook">Open in Outlook Web</a><button class="btn" id="rpCopy" type="button">Copy text</button><button class="btn" data-close>Close</button></div></aside>';
+  const upd=()=>{$("#rpOl").href="https://outlook.office.com/mail/deeplink/compose?to="+e($("#rpTo").value)+"&subject="+e($("#rpSub").value)+"&body="+e($("#rpBody").value)};upd();
+  ["#rpTo","#rpSub","#rpBody"].forEach(i=>$(i).addEventListener("input",upd));
+  $("#rpCopy").addEventListener("click",()=>copyText($("#rpBody").value));
+  $("#drawerRoot").querySelectorAll("[data-close]").forEach(x=>x.addEventListener("click",closeDrawer))}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-pfpick]");if(!b)return;const [po,item]=b.dataset.pfpick.split("|");S.pf={cust:S.pf.cust,po,item};const keep=$("#pfMailSug").innerHTML;render();$("#pfMailSug").hidden=false;$("#pfMailSug").innerHTML=keep;$("#pfMailSug").querySelectorAll("[data-pfpick]").forEach(x=>x.classList.toggle("pri",x.dataset.pfpick===b.dataset.pfpick))});
+document.addEventListener("click",e=>{const d=e.target.closest("[data-mdraft]");if(d){openDraft(d.dataset.mdraft);return}const r=e.target.closest("[data-mreply]");if(r)replyDraft(r.dataset.mreply)});
+// ---------- Admin: delete mails from the inbox ----------
+S.mbSel=new Set();
+async function deleteMails(ids){
+  if(!isAdmin()){toast("Only Admin can delete mails");return}
+  let A=null;try{A=await claude.use("assets")}catch(_){}
+  let n=0;for(const id of ids){const m=(S.mails||[]).find(x=>x.id===id);if(!m)continue;
+    const files=[m.eml,...(m.atts||[])].filter(Boolean);
+    for(const f of files)await dropBytes(f,A);
+    try{if(m.asset&&A)await A.delete(m.asset)}catch(_){}
+    try{await S.db.doc("mail/"+id).delete();n++}catch(e){toast("Couldn't delete a mail ("+(e&&e.code||"error")+")");continue}
+    logAct("Priority","Mail deleted",m.recv||todayISO(),(m.pos||[]).map(poShow).join(", ")+" · "+(m.subject||m.name||"")+" · "+(m.from||""))}
+  // priorities keep their level; only the link to the deleted mail is removed
+  let ch=false;for(const[k,p]of Object.entries(S.prio.lines)){if(!p)continue;let q=p;if(p.mail&&ids.includes(p.mail)){q={...q};delete q.mail;ch=true}if(p.req&&p.req.mail&&ids.includes(p.req.mail)){q={...q,req:{...p.req}};delete q.req.mail;ch=true}S.prio.lines[k]=q}
+  if(ch)savePrio();
+  S.mails=(S.mails||[]).filter(x=>!ids.includes(x.id));ids.forEach(id=>S.mbSel.delete(id));render();toast(n+" mail"+(n>1?"s":"")+" deleted")}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-mdel]");if(b){twoClick(b,"",()=>deleteMails([b.dataset.mdel]));return}});
+document.addEventListener("change",e=>{const t=e.target;if(t.dataset&&t.dataset.msel!=null){t.checked?S.mbSel.add(t.dataset.msel):S.mbSel.delete(t.dataset.msel);render();return}
+  if(t.id==="mbAll"){document.querySelectorAll("#mbBody [data-msel]").forEach(c=>{t.checked?S.mbSel.add(c.dataset.msel):S.mbSel.delete(c.dataset.msel)});render()}});
+$("#mbDelSel").addEventListener("click",()=>{const ids=[...S.mbSel];if(!ids.length)return;twoClick($("#mbDelSel"),"",()=>deleteMails(ids))});
+// ---------- mail copy attached to a customer priority ----------
+S.pfMail=null;
+function setPfMail(f){S.pfMail=f||null;if(!f){S.pfEml=null;const sg=$("#pfMailSug");if(sg)sg.hidden=true}const nm=$("#pfMailName");if(!nm)return;nm.textContent=f?(f.name+" · "+Math.max(1,Math.round(f.size/1024))+" KB"):"No file attached";nm.className=f?"mname":"hint";nm.style.margin="0";$("#pfMailDel").hidden=!f;$("#pfDrop").classList.toggle("on",!!f)}
+function okMailFile(f){if(!f)return false;const t=(f.type||"").toLowerCase(),nm=(f.name||"").toLowerCase();
+  if(/\.eml$/.test(nm)||t==="message/rfc822")return f.size<=20*1024*1024||(toast("File is larger than 20 MB"),false);
+  if(/\.msg$/.test(nm)){toast("Outlook .msg can't be read here. Drag the mail from Outlook to your desktop (it saves as .eml), or use File → Save As, then attach that file");return false}
+  if(f.size>20*1024*1024){toast("File is larger than 20 MB");return false}return true}
+$("#pfMailPick").addEventListener("click",()=>$("#pfMailFile").click());
+$("#pfMailFile").addEventListener("change",e=>{const f=e.target.files[0];e.target.value="";if(okMailFile(f))takeMail(f)});
+$("#pfMailDel").addEventListener("click",()=>{setPfMail(null);S.pfMailId=null});
+$("#pfMailText").addEventListener("change",e=>{if(S.pfEml)return;const t=e.target.value.trim();if(t.length<10)return;const sub=(t.match(/^Subject:\s*(.+)$/mi)||[])[1]||"";applyMailSuggestion({subject:sub,text:"x\n\n"+t})});
+{const d=$("#pfDrop");["dragenter","dragover"].forEach(ev=>d.addEventListener(ev,e=>{e.preventDefault();d.classList.add("on")}));d.addEventListener("dragleave",()=>d.classList.toggle("on",!!S.pfMail));
+ d.addEventListener("drop",e=>{e.preventDefault();const f=e.dataTransfer.files[0];if(okMailFile(f))takeMail(f);else d.classList.toggle("on",!!S.pfMail)})}
+document.addEventListener("paste",e=>{if(S.tab!=="prio"||!canPlan())return;const it=[...(e.clipboardData&&e.clipboardData.items||[])].find(i=>/^image\//.test(i.type));if(!it)return;const f=it.getAsFile();if(!f)return;e.preventDefault();
+  setPfMail(new File([f],"mail-screenshot-"+new Date().toISOString().slice(0,16).replace(/[:T]/g,"-")+".png",{type:f.type||"image/png"}));toast("Screenshot attached as mail copy")});
+function shrinkImage(f){return new Promise((res,rej)=>{const u=URL.createObjectURL(f),im=new Image();im.onload=()=>{const k=Math.min(1,1600/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);const g=c.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,c.width,c.height);g.drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);let q=.8,d=c.toDataURL("image/jpeg",q);while(d.length>650000&&q>.35){q-=.15;d=c.toDataURL("image/jpeg",q)}res(d)};im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error("Couldn't read that image"))};im.src=u})}
+const fileToDataURL=f=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(new Error("Couldn't read the file"));r.readAsDataURL(f)});
+async function saveMailCopy(f,text,meta){
+  if(f&&/\.eml$/i.test(f.name)&&S.pfEml&&text===S.pfEml.text)text="";
+  if(!S.db)throw new Error("Not connected — can't save the mail copy");
+  const id="M"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),w=whoNow();
+  const doc={at:new Date().toISOString(),by:w.by||"",u:w.u||"",cust:meta.cust||"",ref:meta.ref||"",src:meta.src||"",recv:meta.recv||"",text:text||""};
+  const putBytes=(bytes,name,type)=>storeBytes(bytes,name,type,id);
+  if(f&&/\.eml$/i.test(f.name)){const E=meta.E||S.pfEml||await parseEml(f);
+    Object.assign(doc,{kind:"eml",name:f.name,size:f.size,from:E.from,to:E.to,cc:E.cc,date:E.date,subject:E.subject,text:(text&&text!==E.text?text+"\n\n":"")+E.text.slice(0,60000)});
+    const orig=await putBytes(await f.arrayBuffer(),f.name.replace(/[^\w .()-]/g,"_"),"text/plain");if(orig)doc.eml=orig;
+    doc.atts=[];for(const a of E.atts.filter(a=>!(a.inline&&/^image\//.test(a.type)&&a.bytes.length<40000)).slice(0,30)){const st=await putBytes(a.bytes,a.name,a.type);doc.atts.push({name:a.name,type:a.type,size:a.bytes.length,...(st||{skipped:true})})}
+    f=null}
+  if(f&&!/^(application\/pdf|image\/(png|jpe?g|webp))$/.test(mimeOf(f.name,f.type))){const ty=mimeOf(f.name,f.type);const st=await putBytes(await f.arrayBuffer(),f.name,ty);if(!st)throw new Error("File too large to store (max 20 MB)");
+    Object.assign(doc,{kind:"file",name:f.name,type:ty,size:f.size,atts:[{name:f.name,type:ty,size:f.size,...st}]});f=null}
+  if(f){doc.name=f.name;doc.type=f.type||(/\.pdf$/i.test(f.name)?"application/pdf":"image/png");doc.size=f.size;
+    let A=null;try{A=await claude.use("assets")}catch(_){}
+    let up=null;if(A){try{up=await A.upload(f)}catch(e){up=null}}
+    if(up&&up.id){doc.asset=up.id}
+    else if(/^image\//.test(doc.type)){doc.data=await shrinkImage(f);doc.type="image/jpeg"}
+    else{const d=await fileToDataURL(f);if(d.length>700000)throw new Error("PDF too large to store here (max ~500 KB). Attach a screenshot of the mail instead.");doc.data=d}}
+  Object.assign(doc,meta.extra||{});
+  await S.db.doc("mail/"+id).set(doc);S.mails=[{...doc,id},...(S.mails||[]).filter(x=>x.id!==id)];
+  if(!meta.quiet)logAct("Priority","Mail copy attached",meta.recv||S.planDate,(meta.cust?short(meta.cust)+" · ":"")+(doc.name||"mail text")+(meta.ref?" · "+meta.ref:""));
+  return id;
+}
+async function openMail(id){
+  if(!S.db)return;let m=null;try{const sn=await S.db.doc("mail/"+id).get();m=sn.exists?sn.data():null}catch(_){}
+  if(!m){toast("Mail copy not found");return}
+  const url=m.asset?"/_blob/"+m.asset:(m.data||"");const isImg=/^image\//.test(m.type||"");
+  const fileBytes=loadBytes;
+  if(m.kind==="eml"||m.kind==="file"){const isE=m.kind==="eml";
+    $("#drawerRoot").innerHTML='<div class="scrim" data-close></div><aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="mTitle" style="width:min(720px,100%)"><div class="dh"><div style="flex:1;min-width:0"><h3 id="mTitle">'+esc(m.subject||"Mail copy")+'</h3><div class="hint">'+esc([m.cust&&short(m.cust),"attached by "+(m.by||"—")+" · "+dt(m.at)].filter(Boolean).join(" · "))+'</div></div><button class="btn sm" data-close>Close</button></div>'+
+     '<div class="db mview">'+(isE?'<dl class="meta"><dt>From</dt><dd>'+esc(m.from||"—")+'</dd><dt>To</dt><dd>'+esc(m.to||"—")+'</dd>'+(m.cc?'<dt>Cc</dt><dd>'+esc(m.cc)+'</dd>':"")+'<dt>Date</dt><dd>'+esc(m.date||"—")+'</dd><dt>Subject</dt><dd>'+esc(m.subject||"—")+'</dd>'+(m.ref&&m.ref!==m.subject?'<dt>Reference</dt><dd>'+esc(m.ref)+'</dd>':"")+'</dl>':(m.ref?'<dl class="meta"><dt>Reference</dt><dd>'+esc(m.ref)+'</dd></dl>':""))+
+     ((m.atts||[]).length?'<div class="hint" style="margin:4px 0 0">Attachments ('+m.atts.length+')</div>':"")+
+     '<div class="toolbar">'+(m.atts||[]).map((a,i)=>a.skipped?'<span class="hint">'+esc(a.name)+' (too large, not stored)</span>':'<button class="btn sm" type="button" data-matt="'+i+'" title="'+esc(a.type)+'">'+attIcon(a.type)+' '+esc(a.name)+' <span class="muted">· '+kb(a.size||0)+'</span></button>').join("")+(m.eml?'<button class="btn sm" type="button" id="mEml">⬇ Original .eml</button>':"")+'</div>'+
+     '<div id="mPrev"></div>'+(m.text?'<pre>'+esc(m.text)+'</pre>':"")+'</div></aside>';
+    $("#drawerRoot").querySelectorAll("[data-close]").forEach(x=>x.addEventListener("click",closeDrawer));
+    $("#drawerRoot").querySelectorAll("[data-matt]").forEach(b=>b.addEventListener("click",async()=>{const a=m.atts[+b.dataset.matt];b.disabled=true;try{const buf=await fileBytes(a);const pv=$("#mPrev");
+      if(a.type==="application/pdf"){const u=URL.createObjectURL(new Blob([buf],{type:a.type}));const wn=window.open(u,"_blank");if(!wn)saveBytes(a.name,buf)}
+      else if(/^image\//.test(a.type)){const u=URL.createObjectURL(new Blob([buf],{type:a.type}));pv.innerHTML='<div class="toolbar"><b>'+esc(a.name)+'</b><button class="btn sm" type="button" id="mPvDl">Download</button></div><img alt="'+esc(a.name)+'" src="'+u+'">'}
+      else if(/sheet|excel|csv/.test(a.type)&&window.XLSX){const wb=XLSX.read(new Uint8Array(buf),{type:"array"});const ws=wb.Sheets[wb.SheetNames[0]];const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:""}).slice(0,200);
+        pv.innerHTML='<div class="toolbar"><b>'+esc(a.name)+'</b><span class="hint">sheet “'+esc(wb.SheetNames[0])+'”'+(wb.SheetNames.length>1?" of "+wb.SheetNames.length:"")+(rows.length>=200?" · first 200 rows":"")+'</span><button class="btn sm" type="button" id="mPvDl">Download</button>'+(canPlan()&&parseDemand(wb).length?'<button class="btn sm pri" type="button" id="mPvNd">Create priorities from this demand file</button>':"")+'</div><div class="tw" style="max-height:360px;overflow:auto;border:1px solid var(--line);border-radius:8px"><table>'+rows.map((r,ri)=>'<tr>'+r.map(c=>ri===0?'<th>'+esc(c)+'</th>':'<td>'+esc(c instanceof Date?c.toLocaleDateString("en-IN"):c)+'</td>').join("")+'</tr>').join("")+'</table></div>'}
+      else saveBytes(a.name,buf);
+      const dl=$("#mPvDl");if(dl)dl.addEventListener("click",()=>saveBytes(a.name,buf));const nd=$("#mPvNd");if(nd)nd.addEventListener("click",()=>openDemand(XLSX.read(new Uint8Array(buf),{type:"array"}),{name:a.name,mail:m.id,ref:(m.subject||a.name||"").slice(0,140),recv:m.recv}));if(pv.innerHTML)pv.scrollIntoView({behavior:"smooth",block:"nearest"})}catch(_){toast("Couldn't open "+a.name)}b.disabled=false}));
+    if($("#mEml"))$("#mEml").addEventListener("click",async()=>{try{saveBytes(m.name||"mail.eml",await fileBytes(m.eml))}catch(_){toast("Couldn't download")}});
+    return}
+  $("#drawerRoot").innerHTML='<div class="scrim" data-close></div><aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="mTitle"><div class="dh"><div style="flex:1;min-width:0"><h3 id="mTitle">Mail copy</h3><div class="hint">'+esc([m.cust&&short(m.cust),m.src,m.recv&&fd(m.recv)].filter(Boolean).join(" · "))+'</div></div><button class="btn sm" data-close>Close</button></div>'+
+   '<div class="db mview">'+(m.ref?'<dl class="meta"><dt>Reference</dt><dd>'+esc(m.ref)+'</dd><dt>Attached by</dt><dd>'+esc(m.by||"—")+' · '+esc(dt(m.at))+'</dd></dl>':'<div class="hint">Attached by '+esc(m.by||"—")+' · '+esc(dt(m.at))+'</div>')+
+   (url&&isImg?'<img alt="Mail copy '+esc(m.name||"")+'" src="'+esc(url)+'">':"")+
+   (url&&!isImg?'<div class="toolbar"><span class="mname">'+esc(m.name||"mail.pdf")+'</span><button class="btn pri" type="button" id="mOpen">Open PDF</button><button class="btn" type="button" id="mSave">Download</button></div>':"")+
+   (m.text?'<div class="hint" style="margin:4px 0">Mail text</div><pre>'+esc(m.text)+'</pre>':"")+'</div></aside>';
+  $("#drawerRoot").querySelectorAll("[data-close]").forEach(x=>x.addEventListener("click",closeDrawer));
+  const getBytes=async()=>{if(m.asset){const r=await fetch(url);return await r.arrayBuffer()}const b=atob(m.data.split(",")[1]);const a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a.buffer};
+  if($("#mOpen"))$("#mOpen").addEventListener("click",async()=>{try{const buf=await getBytes();const u=URL.createObjectURL(new Blob([buf],{type:"application/pdf"}));const wn=window.open(u,"_blank");if(!wn)toast("Pop-up blocked — use Download")}catch(_){toast("Couldn't open the PDF")}});
+  if($("#mSave"))$("#mSave").addEventListener("click",async()=>{try{saveBytes(m.name||"mail-copy.pdf",await getBytes())}catch(_){toast("Couldn't download")}});
+}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-mail]");if(!b)return;e.preventDefault();e.stopPropagation();openMail(b.dataset.mail)},true);
 // ---------- PO-wise qty sheet ----------
 $("#btnPoTpl").addEventListener("click",()=>{if(!S.orders){toast("Upload a pending report first");return}
   const L=compute().lines.filter(l=>l.pend>0&&l.level!=="HOLD").sort((a,b)=>a.cust.localeCompare(b.cust)||a.item.localeCompare(b.item)||(a.ord||0)-(b.ord||0));
@@ -2035,7 +2584,7 @@ $("#pfDet").addEventListener("input",e=>{const i=e.target;if(i.dataset.pfq==null
 $("#pfDet").addEventListener("change",e=>{const i=e.target;if(i.dataset.pfd==null)return;i.classList.toggle("other",i.value!==S.planDate);updPfTotals()});
 $("#pfDet").addEventListener("click",e=>{if(e.target.id==="pfAll"){document.querySelectorAll("#pfDet [data-pfq]").forEach(i=>{i.value=i.dataset.pend;i.dispatchEvent(new Event("input",{bubbles:true}))})}});
 function resetPf(full){
-  ["#pfRef","#pfNote","#pfFind"].forEach(i=>$(i).value="");$("#pfRecv").value=todayISO();$("#pfSrc").selectedIndex=0;
+  ["#pfRef","#pfNote","#pfFind","#pfMailText"].forEach(i=>$(i).value="");setPfMail(null);S.pfMailId=null;$("#pfRecv").value=todayISO();$("#pfSrc").selectedIndex=0;
   $("#pfLevel").value="P1";$("#pfLevSeg").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.plv==="P1"));
   if(full)S.pf={cust:"",po:"",item:""};$("#pfDet").dataset.sig="";render();
 }
@@ -2045,10 +2594,10 @@ $("#pfRemove").addEventListener("click",e=>{
   b.dataset.sure="";b.innerHTML="Remove priority &amp; qty from these lines";
   const L=pfTargets(compute().lines);
   const m={...(S.qty.manual||{})};let np=0,nq=0;
-  for(const l of L){if(S.prio.lines[l.key]){delete S.prio.lines[l.key];np++}if(m[l.key]!=null){delete m[l.key];nq++}}
+  for(const l of L){if(S.prio.lines[l.key]&&requestPrio(l.key,null,"Customer priorities form"))np++;if(m[l.key]!=null){delete m[l.key];nq++}}
   if(np)savePrio();if(nq){S.qty={...S.qty,manual:m,updatedAt:new Date().toISOString()};saveQty()}
   logAct("Priority","Priority removed",S.planDate,np+" priority, "+nq+" typed qty · "+short(S.pf.cust)+(S.pf.item?" · "+S.pf.item:"")+(S.pf.po?" · PO "+poShow(S.pf.po):""));
-  resetPf(false);toast("Removed "+np+" priorit"+(np===1?"y":"ies")+" and "+nq+" typed qty");
+  resetPf(false);toast((np?np+" priority removal"+(np>1?"s":"")+" sent for approval · ":"")+"removed "+nq+" typed qty");
 });
 $("#pfDispAll").addEventListener("click",()=>{const v=$("#pfDisp").value;if(!v){toast("Pick a date first");return}document.querySelectorAll("#pfDet [data-pfd]").forEach(x=>{x.value=v;x.classList.toggle("other",v!==S.planDate)});updPfTotals();toast("All rows set to "+fd(v))});
 $("#pfLevSeg").addEventListener("click",e=>{const b=e.target.closest("[data-plv]");if(!b)return;$("#pfLevel").value=b.dataset.plv;$("#pfLevSeg").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));render()});
@@ -2061,9 +2610,15 @@ $("#pfAdd").addEventListener("click",async()=>{
   if(!canPlan())return;const L=pfTargets(compute().lines);
   if(!L.length){toast("Pick a customer, PO and item");return}
   const level=$("#pfLevel").value,src=$("#pfSrc").value,recv=$("#pfRecv").value,ref=$("#pfRef").value.trim(),note=$("#pfNote").value.trim();
+  {const conf=L.map(l=>({l,p:S.prio.lines[l.key]})).filter(x=>x.p&&x.p.level&&x.p.level!==level);if(conf.length&&!(await askChange(conf,level))){toast("Kept the current priority");return}}
+  let mailId=null;const mtext=$("#pfMailText").value.trim();
+  const linked=S.pfMailId?(S.mails||[]).find(m=>m.id===S.pfMailId):null;
+  if(linked){mailId=linked.id}
+  else if(S.pfMail||mtext){$("#pfAdd").disabled=true;try{mailId=await saveMailCopy(S.pfMail,mtext,{cust:L[0].cust,ref,src,recv,extra:{pos:[...new Set(L.map(l=>l.po))],status:"applied",sug:{lv:level,why:[],date:""},msgid:(S.pfEml&&S.pfEml.msgid)||""}})}catch(err){$("#pfAdd").disabled=false;toast(err&&err.message||"Couldn't save the mail copy");return}$("#pfAdd").disabled=false}
   const rows={};document.querySelectorAll("#pfDet [data-pfq]").forEach(i=>{const k=i.dataset.pfq;const dEl=document.querySelector('[data-pfd="'+CSS.escape(k)+'"]');rows[k]={d:(dEl&&dEl.value)||S.planDate,v:i.value,pend:+i.dataset.pend}});
-  for(const l of L){const old=S.prio.lines[l.key]||{};S.prio.lines[l.key]={level,src,recv,ref,note,qty:old.qty??null,disp:(rows[l.key]||{}).d||S.planDate}}
-  savePrio();
+  let nReq=0;for(const l of L){const old=prioBase(S.prio.lines[l.key]);const ne={level,src,recv,ref,note,qty:old.qty??null,disp:(rows[l.key]||{}).d||S.planDate};const mm=mailId||old.mail;if(mm)ne.mail=mm;if(requestPrio(l.key,ne,"Customer priorities form"))nReq++}
+  savePrio();if(nReq)logAct("Priority","Priority requested",S.planDate,nReq+" line"+(nReq>1?"s":"")+" · "+PRIO_LABEL[level]+" · "+short(L[0].cust)+(ref?" · "+ref:""));
+  if(linked){await markMail(linked,"pending","Priority from mail draft sent for approval");S.pfMailId=null}
   const byDate={};let nq=0,tq=0;
   for(const l of L){const rw=rows[l.key];if(!rw)continue;const prevD=rowDate({p:{disp:(l.p&&l.p.disp)}});
     (byDate[rw.d]=byDate[rw.d]||{set:{},del:[]});
@@ -2191,10 +2746,13 @@ function pdfDayPlan(lines,date,veh,label,ttl){
     let y=d.lastAutoTable.finalY+9;if(y>180){d.addPage();y=16}
     d.setFontSize(12);d.setFont("helvetica","bold");d.text(g.loc.toUpperCase(),12,y);const w=d.getTextWidth(g.loc.toUpperCase());d.setFont("helvetica","normal");d.setFontSize(9);
     d.text(n(g.qty)+" nos | "+g.ls.length+" PO lines | "+rs(g.val),12+w+4,y);
-    d.autoTable({...TS,startY:y+2.5,head:[["#","Priority","Customer","Customer PO","Item","Description","Req. date","Dispatch qty","PO balance","Loaded"]],
-      body:g.ls.map((l,i)=>[i+1,l.level||"Normal",short(l.cust),poShow(l.po),l.item,l.desc,fd(l.reqDate)+(l.reqDate&&l.reqDate<date?" (late)":""),n(l.plan)+" "+(l.uom||""),l.pend-l.plan?n(l.pend-l.plan):"Closed",""]),
-      columnStyles:{0:{cellWidth:7},1:{cellWidth:15},2:{cellWidth:38},3:{cellWidth:24},4:{cellWidth:17},5:{cellWidth:"auto"},6:{cellWidth:22},7:{cellWidth:26,halign:"right"},8:{cellWidth:22,halign:"right"},9:{cellWidth:16}},
-      didParseCell:c=>{if(c.section==="body"&&c.column.index===1&&(c.cell.raw==="P1"||c.cell.raw==="P2")){c.cell.styles.textColor=c.cell.raw==="P1"?[180,35,24]:[168,105,15];c.cell.styles.fontStyle="bold"}}});
+    const CG={};g.ls.forEach(l=>(CG[l.cust]=CG[l.cust]||[]).push(l));let cy=y+2.5;
+    Object.keys(CG).forEach((c,ci)=>{const cl=CG[c];if(ci){cy=d.lastAutoTable.finalY+7;if(cy>185){d.addPage();cy=16}}else cy=y+7;
+      d.setFontSize(10);d.setFont("helvetica","bold");d.text("Customer: "+c,12,cy);const cw=d.getTextWidth("Customer: "+c);d.setFont("helvetica","normal");d.setFontSize(9);
+      d.text(n(cl.reduce((t,l)=>t+l.plan,0))+" nos | "+cl.length+" PO line"+(cl.length>1?"s":""),12+cw+4,cy);
+      d.autoTable({...TS,startY:cy+2,head:[["#","Customer PO","Item","Description","Dispatch qty","Loaded"]],
+        body:cl.map((l,i)=>[i+1,poShow(l.po),l.item,l.desc,n(l.plan)+" "+(l.uom||""),""]),
+        columnStyles:{0:{cellWidth:8},1:{cellWidth:34},2:{cellWidth:22},3:{cellWidth:"auto"},4:{cellWidth:32,halign:"right"},5:{cellWidth:30}}})});
   }
   let y=d.lastAutoTable.finalY+16;if(y>190){d.addPage();y=30}
   d.setFontSize(9);["Prepared by (Planner)","Checked by (Stores)","Approved by"].forEach((t,i)=>{const x=12+i*95;d.line(x,y,x+70,y);d.text(t,x,y+5)});
@@ -2273,6 +2831,7 @@ function attachData(db){
   db.doc("app/pallets").onSnapshot(s=>{S.pallets=s.exists?{...s.data(),items:{...(s.data().items||{})}}:{items:{}};const a=document.activeElement;if(a&&a.dataset&&a.dataset.pal!=null)return;render()},()=>{});
   db.collection("log").orderBy("at","desc").limit(1000).onSnapshot(s=>{S.log=s.docs.map(d=>({...d.data(),id:d.id}));if(S.tab==="hist")renderHistTab()},()=>{});
   db.collection("stock").orderBy("date","desc").limit(120).onSnapshot(sn=>{const m={};sn.docs.forEach(d=>m[d.id]=d.data());S.stockAll=m;const a=document.activeElement;if(a&&a.dataset&&a.dataset.stk!=null)return;if(S.tab==="stock"||S.tab==="items")render()},()=>{});
+  db.collection("mail").orderBy("at","desc").limit(400).onSnapshot(sn=>{S.mails=sn.docs.map(d=>({...d.data(),id:d.id}));if(S.tab==="mail")render();else{const nm=$("#nMail");if(nm){const k=S.mails.filter(m=>m.status==="todo").length;nm.textContent=k;nm.classList.toggle("bad",k>0)}}},()=>{});
   db.doc("app/items").onSnapshot(s=>{S.itemMaster=s.exists?s.data():null;if(S.tab==="stock")render()},()=>{});
   db.doc("app/disp").onSnapshot(s=>{S.dispMap=s.exists?{...(s.data().lines||{})}:{};render()},()=>{});
   db.doc("app/contacts").onSnapshot(s=>{S.contacts=s.exists?{list:(s.data().list||[]).map(c=>({...c}))}:{list:[]};if($("#shBox"))renderShareContacts()},()=>{});
@@ -2284,7 +2843,7 @@ function attachData(db){
 }
 async function boot(){
   document.body.classList.add("locked");$("#gate").hidden=false;$("#gGo").disabled=true;$("#gGo").textContent="Connecting…";
-  const h=(location.hash||"").slice(1);if(["today","items","prio","orders","stock","hist","users"].includes(h))S.tab=h;
+  const h=(location.hash||"").slice(1);if(["today","items","prio","mail","orders","stock","hist","users"].includes(h))S.tab=h;
   let db=null,user=null;
   try{if(window.claude&&claude.use)[db,user]=await Promise.all([claude.use("db"),claude.use("user")])}catch(_){}
   if(user){try{if(await user.can("data.write")===false)S.canWrite=false}catch(_){}}
